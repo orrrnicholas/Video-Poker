@@ -1,0 +1,315 @@
+🚀 MASTER BUILD PROMPT
+
+You are a senior software engineer and mathematical probability expert. Build a production-quality Progressive Web App (PWA) called "Card EV Analyzer."
+
+This application must be a mathematically exact, deterministic video poker Expected Value (EV) optimizer and analytical tool.
+
+The final product must be fully functional, modular, performant, and deployable to GitHub Pages.
+
+🎯 CORE OBJECTIVE
+
+Build a mobile-first web application that:
+
+Accepts an exact 5-card input hand
+
+Calculates the exact Expected Value for all 32 possible hold combinations
+
+Identifies the optimal hold
+
+Displays EV values sorted descending
+
+Computes penalty for incorrect holds
+
+Supports custom paytables
+
+Calculates full-game house edge (exact combinatorial, not Monte Carlo)
+
+Supports multi-hand comparison
+
+Works fully offline after installation
+
+Is optimized for iPhone use inside casinos
+
+Is deployable as a GitHub Pages static site
+
+🔢 MATHEMATICAL REQUIREMENTS
+Single Hand Analysis
+
+For a given 5-card hand:
+
+Generate all 32 possible hold combinations (bitmask 0–31).
+
+For each hold:
+
+Enumerate all exact draw combinations from remaining deck.
+
+Use combinatorial enumeration (not Monte Carlo).
+
+Evaluate final 5-card hand category.
+
+Calculate exact EV using:
+
+EV = (sum of payouts across all possible draws) / (total number of draws)
+
+Sort holds by EV descending.
+
+Compute penalty per hold:
+
+Penalty = BestEV − ThisEV
+
+Display best hold clearly and prominently.
+
+Hand Evaluator Requirements
+
+Evaluator must correctly identify:
+
+Royal Flush
+
+Straight Flush
+
+Four of a Kind
+
+Full House
+
+Flush
+
+Straight (including Ace-low)
+
+Three of a Kind
+
+Two Pair
+
+Jacks or Better (or paytable-defined qualifying pair)
+
+High Card
+
+Must be optimized using:
+
+Rank frequency arrays
+
+Suit frequency arrays
+
+Bitmask straight detection
+
+Must be extremely performant (millions of evaluations under 1 second).
+
+House Edge Calculation
+
+When paytable changes:
+
+Enumerate all 2,598,960 possible starting 5-card hands.
+
+For each:
+
+Compute optimal hold EV.
+
+Compute overall return:
+
+Overall Return = (Sum of EV of all starting hands) / 2,598,960
+
+House Edge = 1 − Overall Return
+
+This calculation must:
+
+Run inside a Web Worker
+
+Display progress indicator
+
+Not block UI
+
+Be cacheable
+
+Allow cancellation
+
+📊 FEATURES TO IMPLEMENT
+1️⃣ Custom Paytables
+
+Preloaded presets (e.g., 9/6 Jacks or Better, 8/5 JoB, etc.)
+
+Fully editable payout values
+
+Real-time recalculation trigger
+
+Store user paytables in localStorage
+
+2️⃣ Penalty for Wrong Hold
+
+Display table:
+
+Held cards
+
+EV
+
+Penalty from optimal
+
+Highlight optimal hold
+
+Color-code penalty severity
+
+3️⃣ Multi-Hand Comparison
+
+Allow user to:
+
+Input multiple hands
+
+Analyze each
+
+Compare EV results side-by-side
+
+Compare same hand under different paytables
+
+4️⃣ House Edge View
+
+Separate tab showing:
+
+Overall Return %
+
+House Edge %
+
+Calculation progress
+
+Cache status
+
+📱 USER INTERFACE REQUIREMENTS
+
+Mobile-first responsive layout
+
+Clean, minimal design
+
+Dark mode default
+
+Subtle styling (casino discreet use)
+
+Fast card selection interface
+
+Card input options:
+
+52-card grid selector
+
+Selected cards populate 5-card slots
+
+Prevent duplicate selection
+
+Reset and clear buttons
+
+Results view:
+
+Best hold prominently displayed
+
+EV value shown to at least 5 decimal places
+
+Sorted table of all holds
+
+Optional expand/collapse details
+
+⚡ PERFORMANCE REQUIREMENTS
+
+Single-hand analysis must complete under 1 second on modern iPhone.
+
+Use efficient combinatorics (no recursive overhead).
+
+Avoid unnecessary array allocations inside loops.
+
+Use Web Worker for:
+
+House edge calculation
+
+Optional heavy analysis
+
+🧱 ARCHITECTURE REQUIREMENTS
+
+Use modular structure:
+
+/engine/
+  evaluator.js
+  combinatorics.js
+  evCalculator.js
+  houseEdgeWorker.js
+
+/ui/
+  cardInput.js
+  paytableEditor.js
+  resultsView.js
+  comparisonView.js
+
+index.html
+style.css
+main.js
+manifest.json
+service-worker.js
+
+Strict separation:
+
+Engine must contain zero DOM code.
+
+UI must not contain math logic.
+
+🌐 PWA REQUIREMENTS
+
+Valid manifest.json
+
+Service worker caching:
+
+HTML
+
+JS
+
+CSS
+
+Icons
+
+Fully functional offline after first load
+
+Installable via “Add to Home Screen”
+
+No backend server required
+
+🧪 VALIDATION REQUIREMENTS
+
+Include unit tests for:
+
+Hand evaluator correctness
+
+EV calculation
+
+Validate against known 9/6 JoB return (~99.54%)
+
+🔒 DEPLOYMENT REQUIREMENTS
+
+Must run as static site.
+
+Must work when hosted on GitHub Pages.
+
+No Node backend.
+
+No server dependencies.
+
+📦 DELIVERABLE
+
+Provide:
+
+Complete working source code
+
+Organized folder structure
+
+Clean documentation
+
+Comments explaining core algorithms
+
+Instructions for GitHub Pages deployment
+
+🚫 DO NOT:
+
+Use Monte Carlo for single-hand EV.
+
+Block UI thread during heavy computation.
+
+Hardcode paytables.
+
+Use external paid libraries.
+
+Overcomplicate UI with animations.
+
+🏁 FINAL GOAL
+
+The finished product must function as a professional-grade mathematical EV optimizer usable discreetly inside a casino, fully offline, with exact combinatorial precision and advanced analytical features.

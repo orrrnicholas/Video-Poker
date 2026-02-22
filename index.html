@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Professional Video Poker Expected Value Optimizer - Analyze hands with exact combinatorial precision">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>Card EV Analyzer - Video Poker Expected Value Optimizer</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%231a1a1a' width='100' height='100'/><text x='50' y='70' font-size='60' font-weight='bold' text-anchor='middle' fill='%23fff'>♠</text></svg>">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="header-content">
+                <h1>♠ Card EV Analyzer</h1>
+                <p class="subtitle">Exact Expected Value Analysis & House Edge Calculator</p>
+            </div>
+            <div class="header-tabs">
+                <button class="tab-button active" onclick="window.app.switchTab('analyzer')">Analyzer</button>
+                <button class="tab-button" onclick="window.app.switchTab('houseEdge')">House Edge</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Analyzer Tab -->
+            <div id="card-input-container" class="section-container card-input-section"></div>
+            <div id="paytable-container" class="section-container paytable-section"></div>
+            <div id="results-container" class="section-container results-section"></div>
+
+            <!-- House Edge Tab -->
+            <div id="house-edge-container" class="section-container house-edge-section" style="display: none;"></div>
+        </main>
+
+        <footer class="app-footer">
+            <p>Card EV Analyzer v1.0 • Deterministic combinatorial analysis • Works fully offline</p>
+            <p style="font-size: 12px; color: #666;">For entertainment purposes only. Results for strategic analysis.</p>
+        </footer>
+    </div>
+
+    <!-- Engine Scripts -->
+    <script src="engine/evaluator.js"></script>
+    <script src="engine/combinatorics.js"></script>
+    <script src="engine/evCalculator.js"></script>
+
+    <!-- UI Component Scripts -->
+    <script src="ui/cardInput.js"></script>
+    <script src="ui/paytableEditor.js"></script>
+    <script src="ui/resultsView.js"></script>
+    <script src="ui/houseEdgeView.js"></script>
+
+    <!-- Main App Script -->
+    <script src="main.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').then(registration => {
+                console.log('Service Worker registered:', registration);
+            }).catch(error => {
+                console.log('Service Worker registration failed:', error);
+            });
+        }
+    </script>
+</body>
+</html>
