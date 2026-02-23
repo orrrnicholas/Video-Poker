@@ -393,9 +393,12 @@ class HandEvaluator {
     
     // Can we make a royal with wilds?
     if (royalMatches + numWilds >= 5) {
+      // If all 5 royal ranks are natural (none of the royals are deuces), it's a natural royal
+      const isNaturalRoyal = royalMatches === 5;
+      
       return {
         rank: this.RANKS.ROYAL_FLUSH,
-        category: 'Wild Royal Flush',
+        category: isNaturalRoyal ? 'Royal Flush' : 'Wild Royal Flush',
         kickers: [14, 13, 12, 11, 10]
       };
     }
@@ -466,15 +469,49 @@ class HandEvaluator {
 
   _checkWildFullHouse(rankFreq, numWilds) {
     const ranks = Object.keys(rankFreq);
-    if (ranks.length >= 2) {
-      // Two different ranks - can make full house
-      const sorted = ranks.sort((a, b) => rankFreq[b] - rankFreq[a]);
-      return {
-        rank: this.RANKS.FULL_HOUSE,
-        category: 'Full House',
-        kickers: [this.RANK_INDEX[sorted[0]], this.RANK_INDEX[sorted[1]]]
-      };
+    if (ranks.length < 2) {
+      return null; // Need at least 2 different ranks
     }
+
+    // Check all possible ways to make full house
+    const entries = ranks.map(r => [r, rankFreq[r]]);
+    
+    // Try each rank as the three-of-a-kind
+    for (let i = 0; i < entries.length; i++) {
+      const trips = entries[i];
+      const tripsRank = trips[0];
+      const tripsCount = trips[1];
+      const wildUsedForTrips = Math.max(0, 3 - tripsCount);
+      
+      // Check if we have enough wilds for trips
+      if (wildUsedForTrips > numWilds) {
+        continue;
+      }
+      
+      // Remaining wilds after making trips
+      const remainingWilds = numWilds - wildUsedForTrips;
+      
+      // Try each other rank as the pair
+      for (let j = 0; j < entries.length; j++) {
+        if (i === j) continue;
+        
+        const pair = entries[j];
+        const pairRank = pair[0];
+        const pairCount = pair[1];
+        const wildUsedForPair = Math.max(0, 2 - pairCount);
+        
+        // Check if we have enough wilds for pair
+        if (wildUsedForPair <= remainingWilds) {
+          // Found a valid full house - return the best combination
+          return {
+            rank: this.RANKS.FULL_HOUSE,
+            category: 'Full House',
+            kickers: [this.RANK_INDEX[tripsRank], this.RANK_INDEX[pairRank]]
+          };
+        }
+      }
+    }
+    
     return null;
   }
 
