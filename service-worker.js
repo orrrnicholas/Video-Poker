@@ -3,7 +3,7 @@
  * Enables offline functionality and caches application assets
  */
 
-const CACHE_NAME = 'card-ev-analyzer-v1';
+const CACHE_NAME = 'card-ev-analyzer-v2';
 const ASSETS_TO_CACHE = [
     '/Video-Poker/',
     '/Video-Poker/index.html',
@@ -13,7 +13,9 @@ const ASSETS_TO_CACHE = [
     '/Video-Poker/engine/evaluator.js',
     '/Video-Poker/engine/combinatorics.js',
     '/Video-Poker/engine/evCalculator.js',
+    '/Video-Poker/engine/multiHandAnalysis.js',
     '/Video-Poker/engine/houseEdgeWorker.js',
+    '/Video-Poker/ui/gameSelector.js',
     '/Video-Poker/ui/cardInput.js',
     '/Video-Poker/ui/paytableEditor.js',
     '/Video-Poker/ui/resultsView.js',
