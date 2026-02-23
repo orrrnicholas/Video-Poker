@@ -115,10 +115,10 @@ class PaytableEditor {
 
     // Body
     const tbody = document.createElement('tbody');
-    const handCategories = [
-      'Royal Flush', 'Straight Flush', 'Four of a Kind', 'Full House',
-      'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'Pair', 'High Card'
-    ];
+    
+    // Use the actual hands from the current paytable instead of a fixed list
+    // This allows different game variants (like Deuces Wild) to show their specific hands
+    const handCategories = Object.keys(this.currentPaytable.payouts);
 
     for (const hand of handCategories) {
       const payout = this.currentPaytable.payouts[hand];
