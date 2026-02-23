@@ -116,6 +116,15 @@ class CardEVAnalyzer {
         if (loadingOverlay) {
           loadingOverlay.classList.remove('active');
         }
+        
+        // Focus on session expected return after analysis completes
+        setTimeout(() => {
+          const sessionCalc = document.getElementById('sessionCalculatorDisplay');
+          if (sessionCalc) {
+            sessionCalc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            sessionCalc.focus({ preventScroll: true });
+          }
+        }, 100);
       }
     }, 100);
   }
