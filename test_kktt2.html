@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KKTT2 Full House Test</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .result { margin: 20px 0; padding: 15px; border: 2px solid #ccc; }
+        .pass { border-color: green; background: #e8f5e9; }
+        .fail { border-color: red; background: #ffebee; }
+        .heading { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .content { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Deuces Wild: KKTT2 Full House Test</h1>
+    <div id="results"></div>
+
+    <script src="engine/evaluator.js"></script>
+    <script>
+        const evaluator = new HandEvaluator();
+        
+        // Test the specific hand: KKTT2
+        const hand = ['KH', 'KD', 'TH', 'TS', '2C'];
+        const result = evaluator.evaluateWithWilds(hand);
+        
+        const resultsDiv = document.getElementById('results');
+        
+        // Create result display
+        const div = document.createElement('div');
+        div.className = 'result ' + (result.category === 'Full House' ? 'pass' : 'fail');
+        
+        const heading = document.createElement('div');
+        heading.className = 'heading';
+        heading.textContent = result.category === 'Full House' ? '✓ PASS' : '✗ FAIL';
+        
+        const content = document.createElement('div');
+        content.className = 'content';
+        content.textContent = `Hand: ${hand.join(' ')} (KH, KD, TH, TS, 2C)
+        
+Expected Hand: Full House (KKK + TT with 2 as wild)
+Actual Result: ${result.category}
+
+Hand Breakdown:
+- Kings: 2 natural
+- Tens: 2 natural  
+- Deuces: 1 wild
+
+Logic Flow:
+1. Can make 3 Kings with 1 wild → KKK (uses 1 wild)
+2. Can make 2 Tens with 0 wilds → TT (uses 0 wilds)
+3. Total: Full House ✓
+
+Result Category: ${result.category}
+Kickers: ${result.kickers.join(', ')}`;
+        
+        div.appendChild(heading);
+        div.appendChild(content);
+        resultsDiv.appendChild(div);
+    </script>
+</body>
+</html>

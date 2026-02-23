@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Coverage Verification</title>
+    <style>
+        body { font-family: monospace; margin: 20px; white-space: pre-wrap; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        .section { margin-bottom: 30px; border-bottom: 1px solid #ccc; padding-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Hand Coverage Verification</h1>
+    <div id="output"></div>
+
+    <script src="engine/combinatorics.js"></script>
+    <script src="engine/evaluator.js"></script>
+    <script src="engine/evCalculator.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = message;
+            output.appendChild(div);
+            console.log(message);
+        }
+
+        function verifyHandCoverage() {
+            const evaluator = new HandEvaluator();
+            const combinatorics = new Combinatorics();
+            const calculator = new EVCalculator(evaluator, combinatorics);
+            
+            const paytables = EVCalculator.getPresetPaytables();
+            
+            log('=== HAND COVERAGE VERIFICATION ===\n', 'info');
+            
+            for (const paytable of paytables) {
+                log(`\nVerifying ${paytable.name}...`, 'info');
+                
+                const seenCategories = new Set();
+                const missingPayouts = new Set();
+                const issues = [];
+                
+                // Test hands covering different scenarios
+                const testHands = [
+                    // Standard poker hands
+                    ['AS', 'KS', 'QS', 'JS', 'TS'], // Natural Royal Flush
+                    ['9S', '8S', '7S', '6S', '5S'], // Straight Flush
+                    ['AH', 'AD', 'AC', 'AS', 'KH'], // Four of a Kind (Aces)
+                    ['KH', 'KD', 'KC', 'QS', 'QD'], // Full House
+                    ['2H', '5H', '7H', '9H', 'JH'], // Flush
+                    ['9H', '8D', '7C', '6S', '5H'], // Straight
+                    ['AH', 'AD', 'AC', 'KS', 'QH'], // Three of a Kind
+                    ['KH', 'KD', 'QS', 'QD', 'AH'], // Two Pair
+                    ['JH', 'JD', '5C', '3S', '2H'], // Pair (Jacks)
+                    ['6H', '6D', '5C', '3S', '2H'], // Pair (low - below qualifier)
+                    ['AH', 'KD', 'QS', 'JH', '9C'], // High Card
+                    // Deuces Wild specific hands
+                    ['2H', 'AS', 'KD', 'QS', 'JH'], // 1 Deuce
+                    ['2H', '2D', 'AS', 'KS', 'QS'], // 2 Deuces
+                    ['2H', '2D', '2C', 'AS', 'KS'], // 3 Deuces
+                    ['2H', '2D', '2C', '2S', 'AH'], // 4 Deuces (Natural)
+                    ['2H', '2D', '2C', '2S', '2S'], // 5 Deuces (impossible in real game, but tests edge case)
+                    // More Deuces Wild combos
+                    ['2H', '2D', 'AS', 'AD', 'AC'], // 2 Deuces + Trips (Full House possible)
+                    ['2H', 'AS', 'KS', 'QS', 'JS'], // 1 Deuce near royal
+                ];
+                
+                calculator.setPaytable(paytable);
+                
+                for (const hand of testHands) {
+                    let category;
+                    
+                    try {
+                        if (paytable.name === 'Deuces Wild') {
+                            const eval = evaluator.evaluateWithWilds(hand);
+                            category = eval.category;
+                        } else {
+                            const eval = evaluator.evaluate(hand);
+                            category = eval.category;
+                        }
+                        
+                        seenCategories.add(category);
+                        
+                        if (!paytable.payouts.hasOwnProperty(category)) {
+                            missingPayouts.add(category);
+                            issues.push(`Hand ${hand.join(' ')} → "${category}" NOT in paytable`);
+                        }
+                    } catch (e) {
+                        issues.push(`ERROR evaluating ${hand.join(' ')}: ${e.message}`);
+                    }
+                }
+                
+                const payoutCategories = Object.keys(paytable.payouts);
+                
+                log(`  Categories evaluated: ${Array.from(seenCategories).sort().join(', ')}`, 'info');
+                log(`  Categories in paytable: ${payoutCategories.sort().join(', ')}`, 'info');
+                
+                if (missingPayouts.size > 0) {
+                    log(`  ❌ MISSING PAYOUTS: ${Array.from(missingPayouts).join(', ')}`, 'fail');
+                } else {
+                    log(`  ✅ All evaluated categories have payouts`, 'pass');
+                }
+                
+                if (issues.length > 0) {
+                    log(`\n  Issues found:`, 'fail');
+                    issues.forEach(issue => log(`    • ${issue}`, 'fail'));
+                } else {
+                    log(`  ✅ No issues found`, 'pass');
+                }
+            }
+            
+            log('\n=== VERIFICATION COMPLETE ===', 'info');
+        }
+
+        // Run when page loads
+        verifyHandCoverage();
+    </script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deuces Wild - Comprehensive Wild Card Coverage Test</title>
+    <style>
+        body { font-family: monospace; margin: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        .section { margin: 20px 0; }
+        .test-case { margin: 10px 0; padding: 12px; border-left: 4px solid #ddd; background: white; }
+        .test-case.pass { border-left-color: #4caf50; background: #f1f8e9; }
+        .test-case.fail { border-left-color: #f44336; background: #ffebee; }
+        .hand-display { font-weight: bold; color: #1976d2; margin-bottom: 4px; }
+        .analysis { color: #555; margin: 8px 0; }
+        .mark { font-weight: bold; }
+        .pass-mark { color: #4caf50; }
+        .fail-mark { color: #f44336; }
+        .info { color: #666; font-size: 12px; }
+        summary { cursor: pointer; padding: 8px; background: #f0f0f0; margin-bottom: 8px; font-weight: bold; }
+        details { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Deuces Wild - Comprehensive Wild Card Validation</h1>
+    <p>This test validates that 2s are correctly recognized as wild cards in all scenarios</p>
+    <div id="output"></div>
+
+    <script src="engine/combinatorics.js"></script>
+    <script src="engine/evaluator.js"></script>
+    <script src="engine/evCalculator.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        const evaluator = new HandEvaluator();
+        const calculator = new EVCalculator(evaluator, new Combinatorics());
+        
+        let passCount = 0;
+        let failCount = 0;
+        
+        function createTestCase(hand, description, expectedCategory, analysis) {
+            const div = document.createElement('div');
+            const evaluation = evaluator.evaluateWithWilds(hand);
+            const passed = evaluation.category === expectedCategory;
+            
+            if (passed) {
+                passCount++;
+                div.className = 'test-case pass';
+            } else {
+                failCount++;
+                div.className = 'test-case fail';
+            }
+            
+            const status = passed ? '✓ PASS' : '✗ FAIL';
+            const statusClass = passed ? 'pass-mark' : 'fail-mark';
+            
+            div.innerHTML = `
+                <div class="hand-display">Hand: ${hand.join(' ')}</div>
+                <div class="analysis">${description}</div>
+                <div class="analysis">
+                    Expected: <strong>${expectedCategory}</strong> | 
+                    Got: <strong>${evaluation.category}</strong> |
+                    <span class="${statusClass} mark">${status}</span>
+                </div>
+                <div class="info">${analysis}</div>
+            `;
+            
+            return div;
+        }
+
+        function section(title, description) {
+            const div = document.createElement('div');
+            div.className = 'section';
+            div.innerHTML = `<h2 style="border-bottom: 2px solid #ddd; padding-bottom: 8px;">${title}</h2><p>${description}</p>`;
+            return div;
+        }
+
+        // Run tests
+        output.appendChild(section('Single Deuce Tests', 'Validating that a single 2 (deuce) acts as a wild card in various combinations'));
+
+        const singleDeuceTests = [
+            {
+                hand: ['KH', 'KD', 'TH', 'TS', '2C'],
+                description: 'KKTT2 → Full House',
+                expected: 'Full House',
+                analysis: 'Math: 2 Kings + 2 Tens + 1 wild(2) = KKK + TT = Full House ✓'
+            },
+            {
+                hand: ['AH', 'AD', 'AC', 'KS', '2D'],
+                description: 'AAA K 2 → Full House',
+                expected: 'Full House',
+                analysis: 'Math: 3 Aces + 1 King + 1 wild(2) = AAA + KK = Full House ✓'
+            },
+            {
+                hand: ['QH', 'QD', 'QC', '2S', '2H'],
+                description: 'QQQ 2 2 → Four of a Kind / Five of a Kind',
+                expected: 'Five of a Kind',
+                analysis: 'Math: 3 Queens + 2 wilds(2s) = QQQQQ = Five of a Kind (best hand) ✓'
+            },
+            {
+                hand: ['JH', 'JD', '9C', '8S', '2H'],
+                description: 'JJ 9 8 2 → Three of a Kind',
+                expected: 'Three of a Kind',
+                analysis: 'Math: 2 Jacks + 1 wild(2) = JJJ + 9 8 = Three of a Kind ✓'
+            },
+            {
+                hand: ['7H', '6D', '5C', '4S', '2H'],
+                description: '7 6 5 4 2 → Straight',
+                expected: 'Straight',
+                analysis: 'Math: Natural 7-6-5-4 + wild(2) as 3 = 7-6-5-4-3 Straight ✓'
+            },
+            {
+                hand: ['AH', 'KD', 'QC', 'JS', '2H'],
+                description: 'AKQJ 2 → Straight',
+                expected: 'Straight',
+                analysis: 'Math: Natural A-K-Q-J + wild(2) as T = A-K-Q-J-T Straight ✓'
+            }
+        ];
+
+        singleDeuceTests.forEach(test => {
+            output.appendChild(createTestCase(test.hand, test.description, test.expected, test.analysis));
+        });
+
+        output.appendChild(section('Multiple Deuce Tests', 'Validating behavior with 2, 3, 4, and 5 deuces'));
+
+        const multipleDeuceTests = [
+            {
+                hand: ['AH', 'AD', '2C', '2D', '2H'],
+                description: 'AA 222 → Five of a Kind',
+                expected: 'Five of a Kind',
+                analysis: 'Math: 2 Aces + 3 wilds(2s) = AAAAA = Five of a Kind ✓'
+            },
+            {
+                hand: ['KH', 'KD', '2C', '2D', '2H'],
+                description: 'KK 222 → Five of a Kind',
+                expected: 'Five of a Kind',
+                analysis: 'Math: 2 Kings + 3 wilds(2s) = KKKKK = Five of a Kind ✓'
+            },
+            {
+                hand: ['9H', '8D', '7C', '6S', '2H'],
+                description: '9876 2 → Straight Flush (if suited) or Straight',
+                expected: 'Straight',
+                analysis: 'Math: 4 natural ranks + 1 wild = can make straight with wild as 5'
+            },
+            {
+                hand: ['AH', '2D', '2C', '2S', 'KH'],
+                description: 'A 222 K (Four Deuces simulation with A) → Four of a Kind',
+                expected: 'Four of a Kind',
+                analysis: 'Math: 1 Ace + 3 wilds(2s) = AAAA using 3 wilds as Aces'
+            },
+            {
+                hand: ['2H', '2D', '2C', '2S', 'AH'],
+                description: '2222 A → Four Deuces (Explicit)',
+                expected: 'Four Deuces',
+                analysis: 'Math: Exactly 4 natural 2s = automatic Four Deuces = 200 points ✓'
+            },
+            {
+                hand: ['2H', '2D', '2C', 'AS', 'KH'],
+                description: '222 A K → Five of a Kind (3 wilds)',
+                expected: 'Five of a Kind',
+                analysis: 'Math: 3 wilds(2s) + A + K → can make AAAAA or KKKKK or AAA+KK'
+            }
+        ];
+
+        multipleDeuceTests.forEach(test => {
+            output.appendChild(createTestCase(test.hand, test.description, test.expected, test.analysis));
+        });
+
+        output.appendChild(section('Edge Cases - Wild Card Position', 'Ensuring deuce works regardless of position in hand array'));
+
+        const positionTests = [
+            {
+                hand: ['2H', 'KH', 'KD', 'TH', 'TS'],
+                description: '2 KKTT (deuce first) → Full House',
+                expected: 'Full House',
+                analysis: 'Position: Deuce in first position. Math: 2 Kings + 2 Tens + 1 wild = KKK+TT ✓'
+            },
+            {
+                hand: ['KH', '2D', 'KD', 'TH', 'TS'],
+                description: 'K 2 KTT (deuce middle) → Full House',
+                expected: 'Full House',
+                analysis: 'Position: Deuce in middle. Math: Same calculation = Full House ✓'
+            },
+            {
+                hand: ['KH', 'KD', 'TH', '2S', 'TS'],
+                description: 'KKT 2 T (deuce near end) → Full House',
+                expected: 'Full House',
+                analysis: 'Position: Deuce near end. Math: Same calculation = Full House ✓'
+            },
+            {
+                hand: ['KH', 'KD', 'TH', 'TS', '2C'],
+                description: 'KKTT 2 (deuce last) → Full House',
+                expected: 'Full House',
+                analysis: 'Position: Deuce at end. Math: Same calculation = Full House ✓'
+            }
+        ];
+
+        positionTests.forEach(test => {
+            output.appendChild(createTestCase(test.hand, test.description, test.expected, test.analysis));
+        });
+
+        output.appendChild(section('Complex Cases - Wild vs Natural', 'Validating wild card choice logic'));
+
+        const complexTests = [
+            {
+                hand: ['AH', 'AD', 'AC', 'AS', '2C'],
+                description: 'AAAA 2 → Five of a Kind (not just 4 Aces)',
+                expected: 'Five of a Kind',
+                analysis: 'Math: 4 natural Aces + 1 wild(2) = AAAAA (Five of a Kind worth 15 > Four of a Kind worth 5) ✓'
+            },
+            {
+                hand: ['AH', 'AD', '2C', '2D', 'KH'],
+                description: 'AA 22 K → Full House',
+                expected: 'Full House',
+                analysis: 'Math: 2 Aces + 2 wilds(2s) = AAAAA? No! Best is AAA+KK = Full House ✓'
+            },
+            {
+                hand: ['AH', 'AS', 'KD', 'KC', '2H'],
+                description: 'AA KK 2 → Full House',
+                expected: 'Full House',
+                analysis: 'Math: 2 Aces + 2 Kings + 1 wild = either AAA+KK or AA+KKK depending on strategy'
+            },
+            {
+                hand: ['9H', '9D', '8C', '7S', '2H'],
+                description: '99 87 2 → Three of a Kind (not straight)',
+                expected: 'Three of a Kind',
+                analysis: 'Math: 2 Nines + 1 wild(2) = 999 (best option vs incomplete straight)'
+            }
+        ];
+
+        complexTests.forEach(test => {
+            output.appendChild(createTestCase(test.hand, test.description, test.expected, test.analysis));
+        });
+
+        output.appendChild(section('Flush and Straight Tests', 'Validating wild cards in suit-based hands'));
+
+        const flushTests = [
+            {
+                hand: ['AH', 'KH', 'QH', 'JH', '2C'],
+                description: 'AKQJ 2 (different suit) → Royal Flush',
+                expected: 'Straight',
+                analysis: 'Math: A-K-Q-J natural + wild(2) card ≠ all same suit, so straight only'
+            },
+            {
+                hand: ['AH', 'KH', 'QH', 'JH', '2H'],
+                description: 'AKQJ2 all Hearts → Wild Royal Flush',
+                expected: 'Wild Royal Flush',
+                analysis: 'Math: A-K-Q-J all hearts + wild(2) as 10 of hearts = Royal Flush using wild ✓'
+            },
+            {
+                hand: ['KH', 'QH', 'JH', '9H', '2H'],
+                description: 'KQJX2 all Hearts → Straight Flush',
+                expected: 'Straight Flush',
+                analysis: 'Math: 4 hearts in sequence + wild as missing card = Straight Flush ✓'
+            }
+        ];
+
+        flushTests.forEach(test => {
+            output.appendChild(createTestCase(test.hand, test.description, test.expected, test.analysis));
+        });
+
+        // Summary
+        const summary = document.createElement('div');
+        summary.style.marginTop = '30px';
+        summary.style.padding = '15px';
+        summary.style.borderTop = '2px solid #ddd';
+        summary.style.fontSize = '16px';
+        summary.style.fontWeight = 'bold';
+        
+        const totalTests = passCount + failCount;
+        const percentage = totalTests > 0 ? ((passCount / totalTests) * 100).toFixed(1) : 0;
+        const summaryColor = passCount === totalTests ? '#4caf50' : '#f44336';
+        
+        summary.innerHTML = `
+            <div style="color: ${summaryColor}; margin-bottom: 10px;">
+                RESULTS: ${passCount}/${totalTests} Tests Passed (${percentage}%)
+            </div>
+            <div style="color: #666; font-size: 14px;">
+                ${passCount === totalTests 
+                    ? '✓ All tests passed! 2s are correctly recognized as wild cards with proper mathematical validation.' 
+                    : '✗ Some tests failed. Review the failed cases above.'}
+            </div>
+        `;
+        
+        output.appendChild(summary);
+    </script>
+</body>
+</html>

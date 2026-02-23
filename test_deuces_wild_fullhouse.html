@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deuces Wild - Full House Test</title>
+    <style>
+        body { font-family: monospace; margin: 20px; white-space: pre-wrap; }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .test-case { margin: 15px 0; padding: 10px; border: 1px solid #ddd; }
+        .hand { font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+    <h1>Deuces Wild - Full House Recognition Test</h1>
+    <div id="output"></div>
+
+    <script src="engine/combinatorics.js"></script>
+    <script src="engine/evaluator.js"></script>
+    <script src="engine/evCalculator.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.textContent = message;
+            if (type === 'pass') div.className = 'pass';
+            if (type === 'fail') div.className = 'fail';
+            output.appendChild(div);
+            console.log(message);
+        }
+
+        function testFullHouseWithWild() {
+            const evaluator = new HandEvaluator();
+            
+            // Test case: KKTT2 - should be Full House
+            // K-K (pair) + T-T (pair) + 2 (wild as either K or T)
+            const hand = ['KH', 'KD', 'TH', 'TS', '2C'];
+            
+            log('Testing Deuces Wild Hand Recognition', 'info');
+            log('=====================================\n', 'info');
+            
+            log(`Hand: ${hand.join(' ')} (King, King, Ten, Ten, Deuce)`, 'info');
+            log('', 'info');
+            
+            try {
+                const evaluation = evaluator.evaluateWithWilds(hand);
+                
+                log(`Category: ${evaluation.category}`, 'info');
+                log(`Expected: Full House`, 'info');
+                
+                if (evaluation.category === 'Full House') {
+                    log('✓ PASS - Correctly recognized as Full House', 'pass');
+                } else {
+                    log(`✗ FAIL - Expected "Full House" but got "${evaluation.category}"`, 'fail');
+                }
+                
+                log(`Kickers: ${evaluation.kickers.join(', ')}`, 'info');
+                log('', 'info');
+                
+            } catch (e) {
+                log(`✗ ERROR: ${e.message}`, 'fail');
+            }
+            
+            // Additional test cases with wilds
+            log('\nAdditional Wild Hand Tests:', 'info');
+            log('============================\n', 'info');
+            
+            const testCases = [
+                {
+                    hand: ['AH', 'AD', 'AC', '2D', '2C'],
+                    description: 'AAA22 (3 Aces + 2 wilds) - should be Full House',
+                    expected: 'Full House'
+                },
+                {
+                    hand: ['AH', 'AD', '2D', '2C', '2H'],
+                    description: 'AA222 (2 Aces + 3 wilds) - should be Five of a Kind',
+                    expected: 'Five of a Kind'
+                },
+                {
+                    hand: ['KH', 'KD', '2H', '2D', '2C'],
+                    description: 'KK222 (2 Kings + 3 wilds) - should be Five of a Kind',
+                    expected: 'Five of a Kind'
+                },
+                {
+                    hand: ['AH', 'KD', 'QH', 'JS', 'TS'],
+                    description: 'AKQJT (all natural, no wilds) - should be Straight',
+                    expected: 'Straight'
+                },
+                {
+                    hand: ['2H', 'KD', 'QH', 'JS', 'TS'],
+                    description: '2KQJT (1 wild) - should make high straight or royal',
+                    expected: 'Straight' // Can make Ace-high straight or royal with deuce
+                },
+                {
+                    hand: ['7H', '7D', '7C', '2D', '2C'],
+                    description: '77722 (3 sevens + 2 wilds) - should be Full House',
+                    expected: 'Full House'
+                }
+            ];
+            
+            testCases.forEach((testCase, index) => {
+                const div = document.createElement('div');
+                div.className = 'test-case';
+                
+                try {
+                    const evaluation = evaluator.evaluateWithWilds(testCase.hand);
+                    const passed = evaluation.category === testCase.expected;
+                    
+                    let result = '';
+                    result += `Test ${index + 1}: ${testCase.description}\n`;
+                    result += `Hand: ${testCase.hand.join(' ')}\n`;
+                    result += `Expected: ${testCase.expected}\n`;
+                    result += `Got: ${evaluation.category}\n`;
+                    result += `Status: ${passed ? '✓ PASS' : '✗ FAIL'}`;
+                    
+                    div.textContent = result;
+                    if (passed) {
+                        div.style.borderColor = 'green';
+                        div.style.backgroundColor = '#e8f5e9';
+                    } else {
+                        div.style.borderColor = 'red';
+                        div.style.backgroundColor = '#ffebee';
+                    }
+                } catch (e) {
+                    div.textContent = `Test ${index + 1}: ERROR\n${testCase.description}\n${e.message}`;
+                    div.style.borderColor = 'red';
+                    div.style.backgroundColor = '#ffebee';
+                }
+                
+                output.appendChild(div);
+            });
+        }
+
+        // Run when page loads
+        testFullHouseWithWild();
+    </script>
+</body>
+</html>
