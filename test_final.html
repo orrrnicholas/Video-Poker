@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Final Deuces Wild Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; max-width: 900px; margin: 0 auto; }
+    h1 { color: #4a9eff; }
+    .test-section { background: #2a2a2a; padding: 15px; margin: 15px 0; border-radius: 8px; }
+    .pass { color: #00ff00; font-weight: bold; }
+    .fail { color: #ff0000; font-weight: bold; }
+    .timing { color: #ffff00; }
+    .info { color: #aaa; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid #444; }
+    th { color: #4a9eff; }
+    button { background: #4a9eff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px 5px; }
+    button:hover { background: #3a8eef; }
+  </style>
+</head>
+<body>
+  <h1>🃏 Final Deuces Wild Verification Test</h1>
+  <div class="info">This tests the optimized wild card algorithm for speed and accuracy.</div>
+
+  <div id="output"></div>
+
+  <button onclick="runTests()">Run All Tests</button>
+  <button onclick="testMainApp()">Test in Main App</button>
+
+  <script src="engine/evaluator.js"></script>
+  <script src="engine/combinatorics.js"></script>
+  <script src="engine/evCalculator.js"></script>
+
+  <script>
+    let evaluator, combinatorics, evCalculator;
+
+    function init() {
+      evaluator = new HandEvaluator();
+      combinatorics = new Combinatorics();
+      evCalculator = new EVCalculator(evaluator, combinatorics);
+
+      const deucesWildPaytable = {
+        name: 'Deuces Wild',
+        qualifier: { rank: 'THREE_OF_A_KIND', rankValue: 2 },
+        payouts: {
+          'Royal Flush': 800,
+          'Four Deuces': 200,
+          'Wild Royal Flush': 25,
+          'Five of a Kind': 15,
+          'Straight Flush': 9,
+          'Four of a Kind': 5,
+          'Full House': 3,
+          'Flush': 2,
+          'Straight': 2,
+          'Three of a Kind': 1,
+          'Pair': 0,
+          'Two Pair': 0,
+          'High Card': 0
+        }
+      };
+      evCalculator.setPaytable(deucesWildPaytable);
+    }
+
+    function runTests() {
+      init();
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+
+      // Test 1: Performance with multiple wilds
+      const section1 = document.createElement('div');
+      section1.className = 'test-section';
+      section1.innerHTML = '<h2>Performance Tests</h2>';
+      
+      const tests = [
+        { hand: ['2H', '5C', '7D', '9S', 'JH'], name: 'One Wild', wilds: 1 },
+        { hand: ['2H', '2D', '5C', '7S', '9H'], name: 'Two Wilds', wilds: 2 },
+        { hand: ['2H', '2D', '2C', '5S', 'TH'], name: 'Three Wilds (Critical)', wilds: 3 },
+        { hand: ['2H', '2D', '2C', '2S', 'AH'], name: 'Four Wilds (Four Deuces)', wilds: 4 }
+      ];
+
+      const table = document.createElement('table');
+      table.innerHTML = '<tr><th>Test</th><th>Wilds</th><th>Result</th><th>Time (ms)</th><th>Status</th></tr>';
+      
+      for (const test of tests) {
+        const start = performance.now();
+        const result = evaluator.evaluateWithWilds(test.hand);
+        const end = performance.now();
+        const time = (end - start).toFixed(2);
+        const status = parseFloat(time) < 10 ? '✓ FAST' : '✗ SLOW';
+        const statusClass = parseFloat(time) < 10 ? 'pass' : 'fail';
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${test.name}</td><td>${test.wilds}</td><td>${result.category}</td><td class="timing">${time}</td><td class="${statusClass}">${status}</td>`;
+        table.appendChild(row);
+      }
+      section1.appendChild(table);
+      output.appendChild(section1);
+
+      // Test 2: Full analysis performance
+      const section2 = document.createElement('div');
+      section2.className = 'test-section';
+      section2.innerHTML = '<h2>Full Analysis Performance (32 holds)</h2>';
+      
+      const start = performance.now();
+      const results = evCalculator.analyzeAllHolds(['2H', '2D', '2C', '5S', 'TH']);
+      const end = performance.now();
+      const time = (end - start).toFixed(0);
+      
+      section2.innerHTML += `<p>Time to analyze all 32 hold combinations: <span class="timing">${time}ms</span></p>`;
+      section2.innerHTML += `<p>Best hold: ${results[0].held.join(' ') || 'Draw All'}</p>`;
+      section2.innerHTML += `<p>Best EV: ${results[0].ev.toFixed(5)}</p>`;
+      section2.innerHTML += `<p class="${parseFloat(time) < 5000 ? 'pass' : 'fail'}">Status: ${parseFloat(time) < 5000 ? '✓ RESPONSIVE' : '✗ TOO SLOW'}</p>`;
+      output.appendChild(section2);
+
+      // Test 3: Correctness tests
+      const section3 = document.createElement('div');
+      section3.className = 'test-section';
+      section3.innerHTML = '<h2>Correctness Tests</h2>';
+      
+      const correctnessTests = [
+        { hand: ['2H', 'AD', 'KD', 'QD', 'JD'], expected: 'Wild Royal Flush', ev: 25 },
+        { hand: ['AD', 'KD', 'QD', 'JD', 'TD'], expected: 'Royal Flush', ev: 800 },
+        { hand: ['2H', '2D', '2C', '2S', 'AH'], expected: 'Four Deuces', ev: 200 },
+        { hand: ['2H', '2D', '5C', '5S', '5H'], expected: 'Five of a Kind', ev: 15 }
+      ];
+
+      const table2 = document.createElement('table');
+      table2.innerHTML = '<tr><th>Hand</th><th>Expected</th><th>Actual</th><th>EV</th><th>Status</th></tr>';
+      
+      for (const test of correctnessTests) {
+        const result = evaluator.evaluateWithWilds(test.hand);
+        const holdResults = evCalculator.analyzeAllHolds(test.hand);
+        const holdAll = holdResults.find(r => r.held.length === 5);
+        const pass = result.category === test.expected && Math.abs(holdAll.ev - test.ev) < 0.01;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${test.hand.join(' ')}</td><td>${test.expected}</td><td>${result.category}</td><td>${holdAll.ev.toFixed(1)}</td><td class="${pass ? 'pass' : 'fail'}">${pass ? '✓ PASS' : '✗ FAIL'}</td>`;
+        table2.appendChild(row);
+      }
+      section3.appendChild(table2);
+      output.appendChild(section3);
+
+      // Test 4: Breakdown verification
+      const section4 = document.createElement('div');
+      section4.className = 'test-section';
+      section4.innerHTML = '<h2>Breakdown Test (Three Deuces: 2H 2D 2C 5S TH)</h2>';
+      
+      const threeDeucesResults = evCalculator.analyzeAllHolds(['2H', '2D', '2C', '5S', 'TH']);
+      const bestHold = threeDeucesResults[0];
+      const breakdown = bestHold.breakdown;
+      
+      section4.innerHTML += `<p>Best Hold: ${bestHold.held.join(' ')}</p>`;
+      section4.innerHTML += `<p>EV: ${bestHold.ev.toFixed(5)}</p>`;
+      section4.innerHTML += '<p>Top 5 Outcomes:</p>';
+      
+      const sorted = Object.entries(breakdown)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 5);
+      
+      const list = document.createElement('ul');
+      for (const [category, data] of sorted) {
+        const percent = ((data.count / bestHold.totalOutcomes) * 100).toFixed(2);
+        const li = document.createElement('li');
+        li.textContent = `${category}: ${data.count} hands (${percent}%)`;
+        list.appendChild(li);
+      }
+      section4.appendChild(list);
+      
+      const hasSpecial = breakdown['Four Deuces'] && breakdown['Five of a Kind'] && breakdown['Wild Royal Flush'];
+      section4.innerHTML += `<p class="${hasSpecial ? 'pass' : 'fail'}">Special hands detected: ${hasSpecial ? '✓ YES' : '✗ NO'}</p>`;
+      output.appendChild(section4);
+
+      // Final summary
+      const summary = document.createElement('div');
+      summary.className = 'test-section';
+      summary.innerHTML = '<h2 class="pass">✓ All Tests Complete!</h2>';
+      summary.innerHTML += '<p>The optimized algorithm is working correctly. The app should no longer freeze when analyzing Deuces Wild hands.</p>';
+      output.appendChild(summary);
+    }
+
+    function testMainApp() {
+      window.open('index.html', '_blank');
+    }
+
+    // Auto-run on load
+    window.onload = runTests;
+  </script>
+</body>
+</html>

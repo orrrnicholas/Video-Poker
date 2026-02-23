@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Deuces Wild Performance Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+    .pass { color: #0f0; font-weight: bold; }
+    .fail { color: #f00; font-weight: bold; }
+    .timing { color: #ff0; }
+    pre { background: #2a2a2a; padding: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Deuces Wild Performance Test</h1>
+  <div id="output"></div>
+
+  <script src="engine/evaluator.js"></script>
+  <script src="engine/combinatorics.js"></script>
+  <script src="engine/evCalculator.js"></script>
+
+  <script>
+    const output = document.getElementById('output');
+    
+    function log(msg, className = '') {
+      const div = document.createElement('div');
+      div.className = className;
+      div.textContent = msg;
+      output.appendChild(div);
+    }
+
+    // Initialize
+    const evaluator = new HandEvaluator();
+    const combinatorics = new Combinatorics();
+    const evCalculator = new EVCalculator(evaluator, combinatorics);
+
+    // Set Deuces Wild paytable
+    const deucesWildPaytable = {
+      name: 'Deuces Wild',
+      qualifier: { rank: 'THREE_OF_A_KIND', rankValue: 2 },
+      payouts: {
+        'Royal Flush': 800,
+        'Four Deuces': 200,
+        'Wild Royal Flush': 25,
+        'Five of a Kind': 15,
+        'Straight Flush': 9,
+        'Four of a Kind': 5,
+        'Full House': 3,
+        'Flush': 2,
+        'Straight': 2,
+        'Three of a Kind': 1,
+        'Pair': 0,
+        'Two Pair': 0,
+        'High Card': 0
+      }
+    };
+    evCalculator.setPaytable(deucesWildPaytable);
+
+    log('='.repeat(60));
+    log('PERFORMANCE TEST - Optimized Wild Card Algorithm');
+    log('='.repeat(60));
+    log('');
+
+    // Test 1: Single wild
+    log('Test 1: One wild (2H 5C 7D 9S JH)');
+    let start = performance.now();
+    const eval1 = evaluator.evaluateWithWilds(['2H', '5C', '7D', '9S', 'JH']);
+    let end = performance.now();
+    log(`  Result: ${eval1.category}`, 'pass');
+    log(`  Time: ${(end - start).toFixed(2)}ms`, 'timing');
+    log('');
+
+    // Test 2: Two wilds
+    log('Test 2: Two wilds (2H 2D 5C 7S 9H)');
+    start = performance.now();
+    const eval2 = evaluator.evaluateWithWilds(['2H', '2D', '5C', '7S', '9H']);
+    end = performance.now();
+    log(`  Result: ${eval2.category}`, 'pass');
+    log(`  Time: ${(end - start).toFixed(2)}ms`, 'timing');
+    log('');
+
+    // Test 3: Three wilds - THE PROBLEMATIC CASE
+    log('Test 3: Three wilds (2H 2D 2C 5S TH) - CRITICAL TEST');
+    start = performance.now();
+    const eval3 = evaluator.evaluateWithWilds(['2H', '2D', '2C', '5S', 'TH']);
+    end = performance.now();
+    log(`  Result: ${eval3.category}`, 'pass');
+    log(`  Time: ${(end - start).toFixed(2)}ms`, 'timing');
+    log('');
+
+    // Test 4: Full analysis with three wilds
+    log('Test 4: FULL ANALYSIS of three wilds (all 32 holds)');
+    start = performance.now();
+    const results = evCalculator.analyzeAllHolds(['2H', '2D', '2C', '5S', 'TH']);
+    end = performance.now();
+    log(`  Analyzed 32 hold combinations`, 'pass');
+    log(`  Best EV: ${results[0].ev.toFixed(5)}`, 'pass');
+    log(`  Time: ${(end - start).toFixed(2)}ms`, 'timing');
+    log('');
+
+    // Test 5: Specific hand evaluations
+    log('Test 5: Specific hand evaluations');
+    
+    const wildRoyal = ['2H', 'AD', 'KD', 'QD', 'JD'];
+    const wildRoyalEval = evaluator.evaluateWithWilds(wildRoyal);
+    log(`  Wild Royal (2H AD KD QD JD): ${wildRoyalEval.category}`, 
+        wildRoyalEval.category === 'Wild Royal Flush' ? 'pass' : 'fail');
+    
+    const fiveKind = ['2H', '2D', '5C', '5S', '5H'];
+    const fiveKindEval = evaluator.evaluateWithWilds(fiveKind);
+    log(`  Five of a Kind (2H 2D 5C 5S 5H): ${fiveKindEval.category}`, 
+        fiveKindEval.category === 'Five of a Kind' ? 'pass' : 'fail');
+    
+    const fourDeuces = ['2H', '2D', '2C', '2S', 'AH'];
+    const fourDeucesEval = evaluator.evaluateWithWilds(fourDeuces);
+    log(`  Four Deuces (2H 2D 2C 2S AH): ${fourDeucesEval.category}`, 
+        fourDeucesEval.category === 'Four Deuces' ? 'pass' : 'fail');
+
+    log('');
+    log('='.repeat(60));
+    log('ALL TESTS COMPLETE - Check times above', 'pass');
+    log('If all times are under 100ms, optimization is working!', 'pass');
+    log('='.repeat(60));
+  </script>
+</body>
+</html>

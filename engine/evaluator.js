@@ -289,6 +289,264 @@ class HandEvaluator {
     const evaluation = this.evaluate(hand);
     return evaluation.category;
   }
+
+  /**
+   * Evaluate a hand with wild cards (deuces wild)
+   * Returns the best possible hand using optimized heuristics
+   */
+  evaluateWithWilds(hand, wildRank = '2') {
+    // Count wilds and non-wilds
+    const wilds = hand.filter(card => card.charAt(0) === wildRank);
+    const nonWilds = hand.filter(card => card.charAt(0) !== wildRank);
+    const numWilds = wilds.length;
+
+    // Special case: Four deuces
+    if (numWilds === 4) {
+      return {
+        rank: this.RANKS.FOUR_OF_A_KIND + 2,
+        category: 'Four Deuces',
+        kickers: [0]
+      };
+    }
+
+    // If no wilds, evaluate normally
+    if (numWilds === 0) {
+      return this.evaluate(hand);
+    }
+
+    // Use optimized heuristic evaluation instead of brute force
+    return this._evaluateWithWildsOptimized(nonWilds, numWilds);
+  }
+
+  /**
+   * Optimized wild card evaluation using heuristics
+   * Much faster than brute force - checks specific patterns
+   */
+  _evaluateWithWildsOptimized(nonWilds, numWilds) {
+    const nonWildRanks = nonWilds.map(c => c.charAt(0));
+    const nonWildSuits = nonWilds.map(c => c.charAt(1));
+    
+    // Build frequency map of non-wild cards
+    const rankFreq = {};
+    const suitFreq = {};
+    for (const card of nonWilds) {
+      const rank = card.charAt(0);
+      const suit = card.charAt(1);
+      rankFreq[rank] = (rankFreq[rank] || 0) + 1;
+      suitFreq[suit] = (suitFreq[suit] || 0) + 1;
+    }
+
+    // Check for Royal Flush (A-K-Q-J-T of same suit)
+    const royalResult = this._checkWildRoyal(nonWilds, numWilds, suitFreq);
+    if (royalResult) return royalResult;
+
+    // Check for Five of a Kind
+    const fiveKindResult = this._checkWildFiveOfKind(rankFreq, numWilds);
+    if (fiveKindResult) return fiveKindResult;
+
+    // Check for Straight Flush
+    const straightFlushResult = this._checkWildStraightFlush(nonWilds, numWilds);
+    if (straightFlushResult) return straightFlushResult;
+
+    // Check for Four of a Kind
+    const fourKindResult = this._checkWildFourOfKind(rankFreq, numWilds);
+    if (fourKindResult) return fourKindResult;
+
+    // Check for Full House
+    const fullHouseResult = this._checkWildFullHouse(rankFreq, numWilds);
+    if (fullHouseResult) return fullHouseResult;
+
+    // Check for Flush
+    const flushResult = this._checkWildFlush(suitFreq, numWilds);
+    if (flushResult) return flushResult;
+
+    // Check for Straight
+    const straightResult = this._checkWildStraight(nonWildRanks, numWilds);
+    if (straightResult) return straightResult;
+
+    // Check for Three of a Kind
+    const threeKindResult = this._checkWildThreeOfKind(rankFreq, numWilds);
+    if (threeKindResult) return threeKindResult;
+
+    // Default to whatever we can make with wilds
+    if (numWilds >= 2) {
+      return { rank: this.RANKS.THREE_OF_A_KIND, category: 'Three of a Kind', kickers: [12] }; // Three Aces
+    }
+    if (numWilds === 1 && Object.keys(rankFreq).length > 0) {
+      const bestRank = Math.max(...Object.keys(rankFreq).map(r => this.RANK_INDEX[r]));
+      return { rank: this.RANKS.PAIR, category: 'Pair', kickers: [bestRank] };
+    }
+    
+    return { rank: this.RANKS.HIGH_CARD, category: 'High Card', kickers: [12] };
+  }
+
+  _checkWildRoyal(nonWilds, numWilds, suitFreq) {
+    const royalRanks = ['A', 'K', 'Q', 'J', 'T'];
+    
+    // Find suit with most cards
+    const maxSuit = Object.keys(suitFreq).reduce((a, b) => suitFreq[a] > suitFreq[b] ? a : b, 'H');
+    const cardsInSuit = nonWilds.filter(c => c.charAt(1) === maxSuit);
+    const ranksInSuit = cardsInSuit.map(c => c.charAt(0));
+    
+    // Count how many royal ranks we have in that suit
+    const royalMatches = royalRanks.filter(r => ranksInSuit.includes(r)).length;
+    
+    // Can we make a royal with wilds?
+    if (royalMatches + numWilds >= 5) {
+      return {
+        rank: this.RANKS.ROYAL_FLUSH,
+        category: 'Wild Royal Flush',
+        kickers: [14, 13, 12, 11, 10]
+      };
+    }
+    return null;
+  }
+
+  _checkWildFiveOfKind(rankFreq, numWilds) {
+    // Find the highest rank that can make five of a kind
+    let bestRank = null;
+    for (const [rank, count] of Object.entries(rankFreq)) {
+      if (count + numWilds >= 5) {
+        const rankIdx = this.RANK_INDEX[rank];
+        if (bestRank === null || rankIdx > bestRank) {
+          bestRank = rankIdx;
+        }
+      }
+    }
+    if (bestRank !== null) {
+      return {
+        rank: this.RANKS.FOUR_OF_A_KIND + 1,
+        category: 'Five of a Kind',
+        kickers: [bestRank]
+      };
+    }
+    return null;
+  }
+
+  _checkWildStraightFlush(nonWilds, numWilds) {
+    // For each suit, check if we can make a straight flush
+    const suits = ['H', 'D', 'C', 'S'];
+    for (const suit of suits) {
+      const cardsInSuit = nonWilds.filter(c => c.charAt(1) === suit);
+      const ranksInSuit = cardsInSuit.map(c => this.RANK_INDEX[c.charAt(0)]);
+      
+      // Can we form a straight with these ranks + wilds?
+      const straightRank = this._findBestStraight(ranksInSuit, numWilds);
+      if (straightRank !== null) {
+        return {
+          rank: this.RANKS.STRAIGHT_FLUSH,
+          category: 'Straight Flush',
+          kickers: straightRank === 5 ? [5, 4, 3, 2, 1] : this._getStraightKickers(straightRank)
+        };
+      }
+    }
+    return null;
+  }
+
+  _checkWildFourOfKind(rankFreq, numWilds) {
+    // Find the highest rank that can make four of a kind
+    let bestRank = null;
+    for (const [rank, count] of Object.entries(rankFreq)) {
+      if (count + numWilds >= 4) {
+        const rankIdx = this.RANK_INDEX[rank];
+        if (bestRank === null || rankIdx > bestRank) {
+          bestRank = rankIdx;
+        }
+      }
+    }
+    if (bestRank !== null) {
+      return {
+        rank: this.RANKS.FOUR_OF_A_KIND,
+        category: 'Four of a Kind',
+        kickers: [bestRank]
+      };
+    }
+    return null;
+  }
+
+  _checkWildFullHouse(rankFreq, numWilds) {
+    const ranks = Object.keys(rankFreq);
+    if (ranks.length >= 2) {
+      // Two different ranks - can make full house
+      const sorted = ranks.sort((a, b) => rankFreq[b] - rankFreq[a]);
+      return {
+        rank: this.RANKS.FULL_HOUSE,
+        category: 'Full House',
+        kickers: [this.RANK_INDEX[sorted[0]], this.RANK_INDEX[sorted[1]]]
+      };
+    }
+    return null;
+  }
+
+  _checkWildFlush(suitFreq, numWilds) {
+    for (const count of Object.values(suitFreq)) {
+      if (count + numWilds >= 5) {
+        return {
+          rank: this.RANKS.FLUSH,
+          category: 'Flush',
+          kickers: [12, 11, 10, 9, 8] // Ace high kickers
+        };
+      }
+    }
+    return null;
+  }
+
+  _checkWildStraight(nonWildRanks, numWilds) {
+    const rankIndices = nonWildRanks.map(r => this.RANK_INDEX[r]);
+    const straightRank = this._findBestStraight(rankIndices, numWilds);
+    
+    if (straightRank !== null) {
+      return {
+        rank: this.RANKS.STRAIGHT,
+        category: 'Straight',
+        kickers: straightRank === 5 ? [5, 4, 3, 2, 1] : this._getStraightKickers(straightRank)
+      };
+    }
+    return null;
+  }
+
+  _checkWildThreeOfKind(rankFreq, numWilds) {
+    // Find the highest rank that can make three of a kind
+    let bestRank = null;
+    for (const [rank, count] of Object.entries(rankFreq)) {
+      if (count + numWilds >= 3) {
+        const rankIdx = this.RANK_INDEX[rank];
+        if (bestRank === null || rankIdx > bestRank) {
+          bestRank = rankIdx;
+        }
+      }
+    }
+    if (bestRank !== null) {
+      return {
+        rank: this.RANKS.THREE_OF_A_KIND,
+        category: 'Three of a Kind',
+        kickers: [bestRank]
+      };
+    }
+    return null;
+  }
+
+  _findBestStraight(rankIndices, numWilds) {
+    // Try to find best straight from high to low
+    // Check A-K-Q-J-T (14-high) down to 5-4-3-2-A (5-high)
+    
+    for (let high = 12; high >= 4; high--) {
+      const needed = [high, high - 1, high - 2, high - 3, high - 4];
+      const matches = needed.filter(r => rankIndices.includes(r)).length;
+      if (matches + numWilds >= 5) {
+        return high + 1; // Return actual rank value
+      }
+    }
+    
+    // Check for A-2-3-4-5 (wheel)
+    const wheelNeeded = [12, 0, 1, 2, 3]; // A, 2, 3, 4, 5
+    const wheelMatches = wheelNeeded.filter(r => rankIndices.includes(r)).length;
+    if (wheelMatches + numWilds >= 5) {
+      return 5; // 5-high straight
+    }
+    
+    return null;
+  }
 }
 
 // Export for Node.js and browser

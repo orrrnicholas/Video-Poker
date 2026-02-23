@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Deuces Wild Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+    .pass { color: #0f0; }
+    .fail { color: #f00; }
+    pre { background: #2a2a2a; padding: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Deuces Wild Test - EV Calculation</h1>
+  <div id="output"></div>
+
+  <script src="engine/evaluator.js"></script>
+  <script src="engine/combinatorics.js"></script>
+  <script src="engine/evCalculator.js"></script>
+
+  <script>
+    const output = document.getElementById('output');
+    
+    function test(name, condition, expected, actual) {
+      const pass = condition;
+      const className = pass ? 'pass' : 'fail';
+      const status = pass ? 'PASS ✓' : 'FAIL ✗';
+      const details = pass ? '' : ` (expected ${expected}, got ${actual})`;
+      output.innerHTML += `<div class="${className}">${status} ${name}${details}</div>`;
+      return pass;
+    }
+
+    // Initialize
+    const evaluator = new HandEvaluator();
+    const combinatorics = new Combinatorics();
+    const evCalculator = new EVCalculator(evaluator, combinatorics);
+
+    // Set Deuces Wild paytable
+    const deucesWildPaytable = {
+      name: 'Deuces Wild',
+      qualifier: { rank: 'THREE_OF_A_KIND', rankValue: 2 },
+      payouts: {
+        'Royal Flush': 800,
+        'Four Deuces': 200,
+        'Wild Royal Flush': 25,
+        'Five of a Kind': 15,
+        'Straight Flush': 9,
+        'Four of a Kind': 5,
+        'Full House': 3,
+        'Flush': 2,
+        'Straight': 2,
+        'Three of a Kind': 1,
+        'Pair': 0,
+        'Two Pair': 0,
+        'High Card': 0
+      }
+    };
+    evCalculator.setPaytable(deucesWildPaytable);
+
+    output.innerHTML += '<h2>Testing Wild Card Evaluation (Optimized Algorithm)</h2>';
+
+    console.time('Wild Royal evaluation');
+    // Test 1: Evaluate wild royal flush
+    const wildRoyal = ['2H', 'AD', 'KD', 'QD', 'JD'];
+    const eval1 = evaluator.evaluateWithWilds(wildRoyal);
+    console.timeEnd('Wild Royal evaluation');
+    test('Wild Royal Flush detection', eval1.category === 'Wild Royal Flush', 'Wild Royal Flush', eval1.category);
+
+    // Test 2: Evaluate natural royal flush
+    const naturalRoyal = ['AD', 'KD', 'QD', 'JD', 'TD'];
+    const eval2 = evaluator.evaluateWithWilds(naturalRoyal);
+    test('Natural Royal Flush detection', eval2.category === 'Royal Flush', 'Royal Flush', eval2.category);
+
+    // Test 3: Four deuces
+    const fourDeuces = ['2H', '2D', '2C', '2S', 'AH'];
+    const eval3 = evaluator.evaluateWithWilds(fourDeuces);
+    test('Four Deuces detection', eval3.category === 'Four Deuces', 'Four Deuces', eval3.category);
+
+    // Test 4: Five of a kind
+    const fiveKind = ['2H', '2D', '5C', '5S', '5H'];
+    const eval4 = evaluator.evaluateWithWilds(fiveKind);
+    test('Five of a Kind detection', eval4.category === 'Five of a Kind', 'Five of a Kind', eval4.category);
+
+    output.innerHTML += '<h2>Testing EV Calculation</h2>';
+
+    // Test 5: Wild royal EV when holding all 5
+    const wildRoyalResults = evCalculator.analyzeAllHolds(wildRoyal);
+    const holdAll5 = wildRoyalResults.find(r => r.held.length === 5);
+    test('Wild Royal EV (hold all 5)', holdAll5.ev === 25.0, '25.0', holdAll5.ev);
+
+    // Test 6: Natural royal EV when holding all 5
+    const naturalRoyalResults = evCalculator.analyzeAllHolds(naturalRoyal);
+    const holdAllNatural = naturalRoyalResults.find(r => r.held.length === 5);
+    test('Natural Royal EV (hold all 5)', holdAllNatural.ev === 800.0, '800.0', holdAllNatural.ev);
+
+    output.innerHTML += '<h2>Testing Breakdown</h2>';
+    
+    // Test 7: Wild royal breakdown
+    test('Wild Royal breakdown category', holdAll5.breakdown['Wild Royal Flush'] !== undefined, 'defined', 
+         holdAll5.breakdown['Wild Royal Flush'] ? 'defined' : 'undefined');
+    if (holdAll5.breakdown['Wild Royal Flush']) {
+      test('Wild Royal breakdown count', holdAll5.breakdown['Wild Royal Flush'].count === 1, '1', 
+           holdAll5.breakdown['Wild Royal Flush'].count);
+    }
+
+    // Test 8: Natural royal breakdown
+    test('Natural Royal breakdown category', holdAllNatural.breakdown['Royal Flush'] !== undefined, 'defined',
+         holdAllNatural.breakdown['Royal Flush'] ? 'defined' : 'undefined');
+    if (holdAllNatural.breakdown['Royal Flush']) {
+      test('Natural Royal breakdown count', holdAllNatural.breakdown['Royal Flush'].count === 1, '1',
+           holdAllNatural.breakdown['Royal Flush'].count);
+    }
+
+    // Test 9: Three deuces hand
+    output.innerHTML += '<h2>Testing Three Deuces (2225T) - Performance Test</h2>';
+    const threeDeuces = ['2H', '2D', '2C', '5S', 'TH'];
+    
+    console.time('Three deuces analysis');
+    const threeDeuceResults = evCalculator.analyzeAllHolds(threeDeuces);
+    console.timeEnd('Three deuces analysis');
+    
+    const bestHold = threeDeuceResults[0];
+    
+    output.innerHTML += '<pre>';
+    output.innerHTML += `Best hold: ${bestHold.held.join(' ')}\n`;
+    output.innerHTML += `EV: ${bestHold.ev.toFixed(5)}\n\n`;
+    output.innerHTML += 'Top outcomes:\n';
+    
+    const sorted = Object.entries(bestHold.breakdown)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 10);
+    
+    for (const [category, data] of sorted) {
+      const percent = ((data.count / bestHold.totalOutcomes) * 100).toFixed(2);
+      output.innerHTML += `  ${category}: ${data.count} (${percent}%)\n`;
+    }
+    output.innerHTML += '</pre>';
+
+    // Check that special hands are possible
+    test('Four Deuces is possible from 2225T', bestHold.breakdown['Four Deuces'] !== undefined, 
+         'found', bestHold.breakdown['Four Deuces'] ? 'found' : 'not found');
+    test('Five of a Kind is possible from 2225T', bestHold.breakdown['Five of a Kind'] !== undefined,
+         'found', bestHold.breakdown['Five of a Kind'] ? 'found' : 'not found');
+    test('Wild Royal Flush is possible from 2225T', bestHold.breakdown['Wild Royal Flush'] !== undefined,
+         'found', bestHold.breakdown['Wild Royal Flush'] ? 'found' : 'not found');
+
+    output.innerHTML += '<h2>All Tests Complete!</h2>';
+  </script>
+</body>
+</html>

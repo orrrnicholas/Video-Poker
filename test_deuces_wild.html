@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Deuces Wild Test</title>
+</head>
+<body>
+  <h1>Deuces Wild Hand Evaluation Test</h1>
+  <pre id="output"></pre>
+
+  <script src="engine/evaluator.js"></script>
+  <script src="engine/combinatorics.js"></script>
+  <script src="engine/evCalculator.js"></script>
+
+  <script>
+    const output = document.getElementById('output');
+    const evaluator = new HandEvaluator();
+    const combinatorics = new Combinatorics();
+    const evCalculator = new EVCalculator(evaluator, combinatorics);
+
+    // Set Deuces Wild paytable
+    const deucesWildPaytable = {
+      name: 'Deuces Wild',
+      qualifier: { rank: 'THREE_OF_A_KIND', rankValue: 2 },
+      payouts: {
+        'Royal Flush': 800,
+        'Four Deuces': 200,
+        'Wild Royal Flush': 25,
+        'Five of a Kind': 15,
+        'Straight Flush': 9,
+        'Four of a Kind': 5,
+        'Full House': 3,
+        'Flush': 2,
+        'Straight': 2,
+        'Three of a Kind': 1,
+        'Pair': 0,
+        'Two Pair': 0,
+        'High Card': 0
+      }
+    };
+    evCalculator.setPaytable(deucesWildPaytable);
+
+    let log = '';
+    function print(msg) {
+      log += msg + '\n';
+      output.textContent = log;
+    }
+
+    print('Testing Deuces Wild Hand Evaluation\n');
+    print('=====================================\n\n');
+
+    // Test 1: Three deuces with 5 and T
+    print('Test 1: Hand 2♥ 2♦ 2♣ 5♠ T♥');
+    const hand1 = ['2H', '2D', '2C', '5S', 'TH'];
+    const eval1 = evaluator.evaluateWithWilds(hand1);
+    print(`  Evaluation: ${eval1.category} (rank ${eval1.rank})`);
+    print('');
+
+    // Test 2: Four deuces
+    print('Test 2: Hand 2♥ 2♦ 2♣ 2♠ 5♥');
+    const hand2 = ['2H', '2D', '2C', '2S', '5H'];
+    const eval2 = evaluator.evaluateWithWilds(hand2);
+    print(`  Evaluation: ${eval2.category} (rank ${eval2.rank})`);
+    print('');
+
+    // Test 3: Natural four of a kind (no deuces)
+    print('Test 3: Hand 5♥ 5♦ 5♣ 5♠ T♥');
+    const hand3 = ['5H', '5D', '5C', '5S', 'TH'];
+    const eval3 = evaluator.evaluateWithWilds(hand3);
+    print(`  Evaluation: ${eval3.category} (rank ${eval3.rank})`);
+    print('');
+
+    // Test 4: Five of a kind (2 deuces + 3 natural)
+    print('Test 4: Hand 2♥ 2♦ 5♣ 5♠ 5♥');
+    const hand4 = ['2H', '2D', '5C', '5S', '5H'];
+    const eval4 = evaluator.evaluateWithWilds(hand4);
+    print(`  Evaluation: ${eval4.category} (rank ${eval4.rank})`);
+    print('');
+
+    // Test 5: Wild Royal Flush
+    print('Test 5: Hand 2♥ A♦ K♦ Q♦ J♦');
+    const hand5 = ['2H', 'AD', 'KD', 'QD', 'JD'];
+    const eval5 = evaluator.evaluateWithWilds(hand5);
+    print(`  Evaluation: ${eval5.category} (rank ${eval5.rank})`);
+    print('');
+
+    // Test 6: Natural Royal Flush (no deuces)
+    print('Test 6: Hand A♦ K♦ Q♦ J♦ T♦');
+    const hand6 = ['AD', 'KD', 'QD', 'JD', 'TD'];
+    const eval6 = evaluator.evaluateWithWilds(hand6);
+    print(`  Evaluation: ${eval6.category} (rank ${eval6.rank})`);
+    print('');
+
+    // Test 7: Analyze holding 2225T
+    print('\nTest 7: Analyzing all holds for 2♥ 2♦ 2♣ 5♠ T♥');
+    print('---------------------------------------------');
+    const results = evCalculator.analyzeAllHolds(hand1);
+    const bestHold = results[0];
+    print(`Best hold: ${bestHold.held.join(' ') || 'Draw All'}`);
+    print(`EV: ${bestHold.ev.toFixed(5)}`);
+    print(`\nBreakdown of outcomes for best hold:`);
+    const sorted = Object.entries(bestHold.breakdown)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 10); // Top 10
+    
+    for (const [category, data] of sorted) {
+      const percent = ((data.count / bestHold.totalOutcomes) * 100).toFixed(2);
+      print(`  ${category}: ${data.count} (${percent}%)`);
+    }
+
+    // Test 8: Holding a complete wild royal flush
+    print('\n\nTest 8: Holding complete Wild Royal Flush 2♥ A♦ K♦ Q♦ J♦');
+    print('--------------------------------------------------------');
+    const wildRoyalHand = ['2H', 'AD', 'KD', 'QD', 'JD'];
+    const wildRoyalResults = evCalculator.analyzeAllHolds(wildRoyalHand);
+    const holdAll = wildRoyalResults.find(r => r.held.length === 5);
+    print(`Holding all 5 cards:`);
+    print(`  EV: ${holdAll.ev.toFixed(5)} (should be 25.0 for wild royal)`);
+    print(`  Breakdown: ${JSON.stringify(holdAll.breakdown)}`);
+    print(`\nBest hold: ${wildRoyalResults[0].held.join(' ')}`);
+    print(`  EV: ${wildRoyalResults[0].ev.toFixed(5)}`);
+
+    // Test 9: Holding a complete natural royal flush  
+    print('\n\nTest 9: Holding complete Natural Royal Flush A♦ K♦ Q♦ J♦ T♦');
+    print('-----------------------------------------------------------');
+    const naturalRoyalHand = ['AD', 'KD', 'QD', 'JD', 'TD'];
+    const naturalRoyalResults = evCalculator.analyzeAllHolds(naturalRoyalHand);
+    const holdAllNatural = naturalRoyalResults.find(r => r.held.length === 5);
+    print(`Holding all 5 cards:`);
+    print(`  EV: ${holdAllNatural.ev.toFixed(5)} (should be 800.0 for natural royal)`);
+    print(`  Breakdown: ${JSON.stringify(holdAllNatural.breakdown)}`);
+  </script>
+</body>
+</html>

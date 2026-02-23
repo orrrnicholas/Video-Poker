@@ -36,6 +36,25 @@ class ResultsView {
     };
   }
 
+  /**
+   * Helper method to evaluate hands based on current game type
+   * Uses wild card evaluation for Deuces Wild, standard evaluation otherwise
+   */
+  _evaluateHand(hand) {
+    if (!this.evaluator) return null;
+    
+    const isDeucesWild = this.paytableEditor?.currentPaytable?.name === 'Deuces Wild';
+    return isDeucesWild ? this.evaluator.evaluateWithWilds(hand) : this.evaluator.evaluate(hand);
+  }
+
+  /**
+   * Helper method to get paytable category based on current game type
+   */
+  _getHandCategory(hand) {
+    const evaluation = this._evaluateHand(hand);
+    return evaluation ? evaluation.category : 'High Card';
+  }
+
   display(hand, analyses) {
     this.results = analyses;
     this.hidden = false;
@@ -551,7 +570,7 @@ class ResultsView {
     const variants = new Set();
 
     for (const finalHand of allPossibleDraws) {
-      const evaluation = this.evaluator.evaluate(finalHand);
+      const evaluation = this._evaluateHand(finalHand);
 
       if (evaluation.category === category) {
         // For Four of a Kind with bonus structure, get the detailed name
@@ -591,7 +610,7 @@ class ResultsView {
     // Count how many draws result in the target hand (with optional detail match)
     let matchCount = 0;
     for (const finalHand of allPossibleDraws) {
-      const evaluation = this.evaluator.evaluate(finalHand);
+      const evaluation = this._evaluateHand(finalHand);
       
       if (evaluation.category === targetHandCategory) {
         // If a specific detail is required (e.g., "4 Aces + 2-4"), check it
@@ -653,13 +672,16 @@ class ResultsView {
     // Evaluate all possible outcomes and find the best hand achievable
     const achievableHands = new Set();
     for (const finalHand of allPossibleDraws) {
-      const category = this.evaluator.getPaytableCategory(finalHand);
+      const category = this._getHandCategory(finalHand);
       achievableHands.add(category);
     }
 
     // Find the best hand that's achievable in the paytable order
     const handOrder = [
-      'Royal Flush',
+      'Royal Flush',             // Natural royal (highest)
+      'Four Deuces',             // Deuces Wild special
+      'Wild Royal Flush',        // Deuces Wild special
+      'Five of a Kind',          // Deuces Wild special
       'Straight Flush',
       'Four of a Kind',
       'Full House',
@@ -717,6 +739,9 @@ class ResultsView {
 
     const handOrder = [
       'Royal Flush',
+      'Four Deuces',             // Deuces Wild special
+      'Wild Royal Flush',        // Deuces Wild special
+      'Five of a Kind',          // Deuces Wild special
       'Straight Flush',
       'Four of a Kind',
       'Full House',

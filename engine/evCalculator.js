@@ -46,10 +46,22 @@ class EVCalculator {
     const allDraws = this.combinatorics.generateAllDraws(heldCards);
     
     let totalPayout = 0;
+    const breakdown = {}; // Track frequency of each hand type
 
     for (const finalHand of allDraws) {
       const payout = this._getPayout(finalHand);
       totalPayout += payout;
+      
+      // Get the hand category for breakdown
+      const category = this.paytable.name === 'Deuces Wild'
+        ? this.evaluator.evaluateWithWilds(finalHand).category
+        : this.evaluator.getPaytableCategory(finalHand);
+      
+      if (!breakdown[category]) {
+        breakdown[category] = { count: 0, totalPayout: 0 };
+      }
+      breakdown[category].count++;
+      breakdown[category].totalPayout += payout;
     }
 
     const numDraws = allDraws.length;
@@ -60,7 +72,9 @@ class EVCalculator {
       ev: ev,
       totalPayout: totalPayout,
       numDraws: numDraws,
-      averagePayout: totalPayout / numDraws
+      averagePayout: totalPayout / numDraws,
+      breakdown: breakdown,
+      totalOutcomes: numDraws
     };
   }
 
@@ -68,16 +82,23 @@ class EVCalculator {
    * Get the payout for a specific hand
    */
   _getPayout(hand) {
-    const category = this.evaluator.getPaytableCategory(hand);
+    // Use wild card evaluation for Deuces Wild
+    const category = this.paytable.name === 'Deuces Wild' 
+      ? this.evaluator.evaluateWithWilds(hand).category
+      : this.evaluator.getPaytableCategory(hand);
+    
     let payout = this.paytable.payouts[category];
     
     // Handle complex payout structures (e.g., bonus quads in Double Double Bonus)
     if (typeof payout === 'object') {
-      const evaluation = this.evaluator.evaluate(hand);
+      const evaluation = this.paytable.name === 'Deuces Wild'
+        ? this.evaluator.evaluateWithWilds(hand)
+        : this.evaluator.evaluate(hand);
+        
       if (this.paytable.name === 'Double Double Bonus') {
         payout = this._getBonusQuadPayout(evaluation);
       } else if (this.paytable.name === 'Deuces Wild') {
-        payout = this._getDeucesWildPayout(hand, category);
+        payout = this._getDeucesWildPayout(hand, category, evaluation);
       }
     }
     
@@ -136,34 +157,48 @@ class EVCalculator {
    * - Natural Royal (no deuces): 800
    * - Four Deuces: 200
    * - Wild Royal (with deuces): 25
-   * - Five of a Kind (four of a kind + deuce): 15
-   * - Four of a Kind (no deuce): 5
+   * - Five of a Kind: 15
+   * - Straight Flush: 9
+   * - Four of a Kind: 5
+   * - Full House: 3
+   * - Flush: 2
+   * - Straight: 2
+   * - Three of a Kind: 1
    */
-  _getDeucesWildPayout(hand, category) {
-    const hasDeuce = hand.some(card => card.charAt(0) === '2');
-    const evaluation = this.evaluator.evaluate(hand);
-    const quadRank = evaluation.kickers[0];
+  _getDeucesWildPayout(hand, category, evaluation) {
+    const numDeuces = hand.filter(card => card.charAt(0) === '2').length;
 
-    // Royal Flush case
-    if (category === 'Royal Flush') {
-      return hasDeuce ? 25 : 800;
+    // Four Deuces - special category
+    if (category === 'Four Deuces') {
+      return 200;
     }
 
-    // Four of a Kind with a deuce = Five of a Kind
-    if (category === 'Four of a Kind' && hasDeuce) {
+    // Natural Royal Flush (no deuces)
+    if (category === 'Royal Flush') {
+      return 800;
+    }
+
+    // Wild Royal Flush (with deuces)
+    if (category === 'Wild Royal Flush') {
+      return 25;
+    }
+
+    // Five of a Kind
+    if (category === 'Five of a Kind') {
       return 15;
     }
 
-    // Standard Four of a Kind (quad of non-deuce rank)
+    // Standard Four of a Kind (no deuces, or natural quad with a deuce kicker)
     if (category === 'Four of a Kind') {
-      // Four deuces (rank index 0)
-      if (quadRank === 0) {
-        return 200;
-      }
       return 5;
     }
 
-    // All other hands use standard payout
+    // Straight Flush
+    if (category === 'Straight Flush') {
+      return 9;
+    }
+
+    // All other hands use standard payout from paytable
     return this.paytable.payouts[category] || 0;
   }
   analyzeAllHolds(hand) {
@@ -263,21 +298,18 @@ class EVCalculator {
         name: 'Deuces Wild',
         qualifier: { rank: 'THREE_OF_A_KIND', rankValue: 2 },
         payouts: {
-          'Royal Flush': {  // Handled by _getDeucesWildPayout
-            'Natural royal flush': 800,
-            'Wild royal flush': 25
-          },
-          'Four of a Kind': {  // Handled by _getDeucesWildPayout
-            'Four deuces': 200,
-            'Five of a kind': 15,
-            'Four of a kind': 5
-          },
-          'Straight Flush': 9,
+          'Royal Flush': 800,           // Natural royal (no deuces)
+          'Four Deuces': 200,            // Four deuces
+          'Wild Royal Flush': 25,        // Royal with deuces
+          'Five of a Kind': 15,          // Five of a kind
+          'Straight Flush': 9,           // Straight flush
+          'Four of a Kind': 5,           // Four of a kind
           'Full House': 3,
           'Flush': 2,
           'Straight': 2,
           'Three of a Kind': 1,
           'Pair': 0,
+          'Two Pair': 0,
           'High Card': 0
         }
       },
