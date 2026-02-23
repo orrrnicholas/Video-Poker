@@ -63,7 +63,8 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - serve from cache, fall back to network
+// Fetch event - network-first strategy (like a website)
+// Always try to fetch from network first, fall back to cache if offline
 self.addEventListener('fetch', (event) => {
     // Only cache GET requests
     if (event.request.method !== 'GET') {
@@ -71,34 +72,34 @@ self.addEventListener('fetch', (event) => {
     }
 
     event.respondWith(
-        caches.match(event.request)
+        // Try network first
+        fetch(event.request)
             .then((response) => {
-                // Return cached response if available
-                if (response) {
+                // Don't cache non-successful responses
+                if (!response || response.status !== 200 || response.type === 'error') {
                     return response;
                 }
 
-                // Otherwise, fetch from network
-                return fetch(event.request)
+                // Clone the response
+                const responseToCache = response.clone();
+
+                // Cache the successful response for offline use
+                caches.open(CACHE_NAME)
+                    .then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+
+                return response;
+            })
+            .catch(() => {
+                // Network failed, try cache
+                return caches.match(event.request)
                     .then((response) => {
-                        // Don't cache non-successful responses
-                        if (!response || response.status !== 200 || response.type === 'error') {
+                        if (response) {
                             return response;
                         }
 
-                        // Clone the response
-                        const responseToCache = response.clone();
-
-                        // Cache the response for future use
-                        caches.open(CACHE_NAME)
-                            .then((cache) => {
-                                cache.put(event.request, responseToCache);
-                            });
-
-                        return response;
-                    })
-                    .catch(() => {
-                        // Network request failed, return a fallback response
+                        // No cache available either
                         return new Response(
                             'Network error - application is available offline',
                             {
