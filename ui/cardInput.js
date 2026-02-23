@@ -150,7 +150,7 @@ class CardInput {
     const currentMultiplierLabel = document.createElement('label');
     currentMultiplierLabel.style.cssText = 'display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #aaa; margin-bottom: 12px;';
     currentMultiplierLabel.innerHTML = `
-      <span>This Hand's Multiplier (does not apply to other hands)</span>
+      <span>Base Hand's Multiplier (does not apply to other hands)</span>
       <select id="currentMultiplier" style="padding: 8px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 13px;">
         <option value="1" selected>1x</option>
         <option value="2">2x</option>
