@@ -27,11 +27,31 @@ class GameSelector {
   render() {
     this.container.innerHTML = '';
 
-    // Title
+    // Collapsible header
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    
     const title = document.createElement('h2');
     title.textContent = 'Select Game';
     title.className = 'game-selector-title';
-    this.container.appendChild(title);
+    
+    const collapseIcon = document.createElement('span');
+    collapseIcon.className = 'collapse-icon';
+    collapseIcon.textContent = '▼';
+    
+    header.appendChild(title);
+    header.appendChild(collapseIcon);
+    this.container.appendChild(header);
+
+    // Collapsible content
+    const content = document.createElement('div');
+    content.className = 'section-content';
+    
+    // Toggle collapse on header click
+    header.onclick = () => {
+      content.classList.toggle('collapsed');
+      collapseIcon.classList.toggle('collapsed');
+    };
 
     // Category sections
     for (const [category, games] of Object.entries(this.games)) {
@@ -69,8 +89,10 @@ class GameSelector {
       }
 
       categoryDiv.appendChild(gamesGrid);
-      this.container.appendChild(categoryDiv);
+      content.appendChild(categoryDiv);
     }
+    
+    this.container.appendChild(content);
   }
 
   selectGame(gameId, btnElement = null) {

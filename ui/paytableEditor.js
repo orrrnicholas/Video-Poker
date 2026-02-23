@@ -17,17 +17,43 @@ class PaytableEditor {
   render() {
     this.container.innerHTML = '';
 
-    // Title
+    // Collapsible header
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    
     const title = document.createElement('h2');
     title.textContent = 'Paytable Configuration';
     title.className = 'paytable-title';
-    this.container.appendChild(title);
+    
+    const collapseIcon = document.createElement('span');
+    collapseIcon.className = 'collapse-icon';
+    collapseIcon.textContent = '▼';
+    
+    header.appendChild(title);
+    header.appendChild(collapseIcon);
+    this.container.appendChild(header);
+
+    // Collapsible content
+    const content = document.createElement('div');
+    content.className = 'section-content';
+    
+    // Start collapsed on mobile
+    if (window.innerWidth <= 768) {
+      content.classList.add('collapsed');
+      collapseIcon.classList.add('collapsed');
+    }
+    
+    // Toggle collapse on header click
+    header.onclick = () => {
+      content.classList.toggle('collapsed');
+      collapseIcon.classList.toggle('collapsed');
+    };
 
     // Instructions
     const instructions = document.createElement('p');
     instructions.style.cssText = 'font-size: 13px; color: #aaa; margin-bottom: 16px;';
     instructions.textContent = 'Adjust payouts below to test different variants. Changes apply immediately to EV calculations.';
-    this.container.appendChild(instructions);
+    content.appendChild(instructions);
 
     // Preset selector
     const presetDiv = document.createElement('div');
@@ -60,13 +86,13 @@ class PaytableEditor {
 
     presetDiv.appendChild(presetLabel);
     presetDiv.appendChild(select);
-    this.container.appendChild(presetDiv);
+    content.appendChild(presetDiv);
 
     // Name display
     const nameDiv = document.createElement('div');
     nameDiv.className = 'paytable-name';
     nameDiv.textContent = `Current: ${this.currentPaytable.name}`;
-    this.container.appendChild(nameDiv);
+    content.appendChild(nameDiv);
 
     // Paytable editor table
     const tableDiv = document.createElement('div');
@@ -153,7 +179,7 @@ class PaytableEditor {
 
     table.appendChild(tbody);
     tableDiv.appendChild(table);
-    this.container.appendChild(tableDiv);
+    content.appendChild(tableDiv);
 
     // Reset button
     const buttonsDiv = document.createElement('div');
@@ -170,7 +196,9 @@ class PaytableEditor {
     };
 
     buttonsDiv.appendChild(resetBtn);
-    this.container.appendChild(buttonsDiv);
+    content.appendChild(buttonsDiv);
+    
+    this.container.appendChild(content);
   }
 
   updatePaytable(hand, payout) {

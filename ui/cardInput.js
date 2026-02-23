@@ -21,17 +21,37 @@ class CardInput {
   render() {
     this.container.innerHTML = '';
     
-    // Title
+    // Collapsible header
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    
     const title = document.createElement('h2');
     title.textContent = 'Select 5 Cards to Analyze';
     title.className = 'card-input-title';
-    this.container.appendChild(title);
+    
+    const collapseIcon = document.createElement('span');
+    collapseIcon.className = 'collapse-icon';
+    collapseIcon.textContent = '▼';
+    
+    header.appendChild(title);
+    header.appendChild(collapseIcon);
+    this.container.appendChild(header);
+
+    // Collapsible content (expanded by default)
+    const content = document.createElement('div');
+    content.className = 'section-content';
+    
+    // Toggle collapse on header click
+    header.onclick = () => {
+      content.classList.toggle('collapsed');
+      collapseIcon.classList.toggle('collapsed');
+    };
 
     // Subtitle/Instructions
     const subtitle = document.createElement('p');
     subtitle.textContent = 'Click 5 cards from any suit to analyze all possible holds and their expected values';
     subtitle.className = 'card-input-subtitle';
-    this.container.appendChild(subtitle);
+    content.appendChild(subtitle);
 
     // Betting Configuration
     const bettingDiv = document.createElement('div');
@@ -72,7 +92,7 @@ class CardInput {
     `;
     bettingDiv.appendChild(creditsLabel);
 
-    this.container.appendChild(bettingDiv);
+    content.appendChild(bettingDiv);
 
     // Ultimate X Toggle
     const ultimateXToggleDiv = document.createElement('div');
@@ -107,7 +127,7 @@ class CardInput {
 
     ultimateXToggleDiv.appendChild(toggleCheckbox);
     ultimateXToggleDiv.appendChild(toggleLabel);
-    this.container.appendChild(ultimateXToggleDiv);
+    content.appendChild(ultimateXToggleDiv);
 
     // Ultimate X Multiplier Configuration
     const multiplierDiv = document.createElement('div');
@@ -215,7 +235,7 @@ class CardInput {
     updateMultBtn.onclick = () => this.updateMultipliersFromGrid(multiplierInputs);
     multiplierDiv.appendChild(updateMultBtn);
 
-    this.container.appendChild(multiplierDiv);
+    content.appendChild(multiplierDiv);
 
     // Controls
     const controls = document.createElement('div');
@@ -235,14 +255,38 @@ class CardInput {
     
     controls.appendChild(resetBtn);
     controls.appendChild(analyzeBtn);
-    this.container.appendChild(controls);
+    content.appendChild(controls);
+
+    // Mobile Action Bar (fixed at bottom on mobile)
+    let mobileActionBar = document.getElementById('mobileActionBar');
+    if (!mobileActionBar) {
+      mobileActionBar = document.createElement('div');
+      mobileActionBar.id = 'mobileActionBar';
+      mobileActionBar.className = 'mobile-action-bar';
+      
+      const mobileResetBtn = document.createElement('button');
+      mobileResetBtn.textContent = 'Clear All';
+      mobileResetBtn.className = 'btn btn-secondary';
+      mobileResetBtn.onclick = () => this.clear();
+      
+      const mobileAnalyzeBtn = document.createElement('button');
+      mobileAnalyzeBtn.textContent = 'Analyze Hand';
+      mobileAnalyzeBtn.className = 'btn btn-primary';
+      mobileAnalyzeBtn.id = 'mobileAnalyzeBtn';
+      mobileAnalyzeBtn.disabled = true;
+      mobileAnalyzeBtn.onclick = () => this.onAnalyze();
+      
+      mobileActionBar.appendChild(mobileResetBtn);
+      mobileActionBar.appendChild(mobileAnalyzeBtn);
+      document.body.appendChild(mobileActionBar);
+    }
 
     // Selected cards display
     const selectedDiv = document.createElement('div');
     selectedDiv.className = 'selected-cards-display';
     selectedDiv.id = 'selectedCardsDisplay';
     selectedDiv.innerHTML = '<p style="text-align: center; color: #888;">No cards selected</p>';
-    this.container.appendChild(selectedDiv);
+    content.appendChild(selectedDiv);
 
     // Card grid
     const gridDiv = document.createElement('div');
@@ -254,12 +298,15 @@ class CardInput {
 
     for (const suit of suits) {
       const suitSection = document.createElement('div');
-      suitSection.className = 'card-suit-section';
+      const suitClass = suit === 'H' ? 'suit-hearts' : 
+                       suit === 'D' ? 'suit-diamonds' : 
+                       suit === 'C' ? 'suit-clubs' : 'suit-spades';
+      suitSection.className = `card-suit-section ${suitClass}`;
       
       const suitLabel = document.createElement('div');
       suitLabel.className = 'suit-label';
       suitLabel.innerHTML = suitLabels[suit];
-      suitLabel.style.color = (suit === 'H' || suit === 'D') ? '#ff4444' : '#000';
+      suitLabel.style.color = (suit === 'H' || suit === 'D') ? '#ff4444' : '#fff';
       suitSection.appendChild(suitLabel);
 
       for (const rank of ranks) {
@@ -275,7 +322,8 @@ class CardInput {
       gridDiv.appendChild(suitSection);
     }
 
-    this.container.appendChild(gridDiv);
+    content.appendChild(gridDiv);
+    this.container.appendChild(content);
   }
 
   getSettings() {
@@ -358,20 +406,29 @@ class CardInput {
   updateDisplay() {
     const display = document.getElementById('selectedCardsDisplay');
     const analyzeBtn = document.getElementById('analyzeBtn');
+    const mobileAnalyzeBtn = document.getElementById('mobileAnalyzeBtn');
 
     if (this.selectedCards.length === 0) {
       display.innerHTML = '<p style="text-align: center; color: #888;">No cards selected</p>';
       analyzeBtn.disabled = true;
+      if (mobileAnalyzeBtn) mobileAnalyzeBtn.disabled = true;
     } else {
       const cardDisplay = this.selectedCards.map(card => {
         const suit = card[1];
         const suitSymbol = { 'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠' }[suit];
-        const color = (suit === 'H' || suit === 'D') ? '#ff4444' : '#000';
+        const color = (suit === 'H' || suit === 'D') ? '#ff4444' : '#fff';
         return `<span class="selected-card" style="color: ${color}; font-weight: bold;">${card[0]}${suitSymbol}</span>`;
       }).join(' ');
 
       display.innerHTML = `<div style="text-align: center; font-size: 18px; letter-spacing: 8px;">${cardDisplay}</div>`;
-      analyzeBtn.disabled = this.selectedCards.length !== 5;
+
+      if (this.selectedCards.length === this.maxCards) {
+        analyzeBtn.disabled = false;
+        if (mobileAnalyzeBtn) mobileAnalyzeBtn.disabled = false;
+      } else {
+        analyzeBtn.disabled = true;
+        if (mobileAnalyzeBtn) mobileAnalyzeBtn.disabled = true;
+      }
     }
   }
 

@@ -89,9 +89,153 @@ class ResultsView {
     // Multi-hand expectations (10 hands)
     this.displayMultiHandExpectations(bestHold.ev);
 
-    // Table of all holds
+    // Results as collapsible cards
+    const resultsCardsContainer = document.createElement('div');
+    resultsCardsContainer.className = 'results-cards-container';
+
+    // Show top 5 by default, rest are "show more"
+    const showLimit = 10;
+    
+    analyses.forEach((result, idx) => {
+      const isBest = idx === 0;
+      
+      // Create result card
+      const card = document.createElement('div');
+      card.className = `result-card${isBest ? ' best-result' : ''}`;
+      
+      // Card header (always visible)
+      const cardHeader = document.createElement('div');
+      cardHeader.className = 'result-card-header';
+      
+      const cardMain = document.createElement('div');
+      cardMain.className = 'result-card-main';
+      
+      const rank = document.createElement('div');
+      rank.className = 'result-rank';
+      rank.textContent = `#${idx + 1}`;
+      
+      const heldCards = document.createElement('div');
+      heldCards.className = 'result-held-cards';
+      if (result.held.length === 0) {
+        heldCards.innerHTML = '<em style="color: #888;">Draw All</em>';
+      } else {
+        heldCards.innerHTML = result.held.map(card => {
+          const color = (card[1] === 'H' || card[1] === 'D') ? '#ff4444' : '#fff';
+          return `<span style="color: ${color};">${card[0]}${suitMap[card[1]]}</span>`;
+        }).join(' ');
+      }
+      
+      const evBadge = document.createElement('div');
+      evBadge.className = 'result-ev-badge';
+      evBadge.textContent = result.ev.toFixed(5);
+      
+      const expandIcon = document.createElement('div');
+      expandIcon.className = 'result-expand-icon';
+      expandIcon.textContent = '▼';
+      
+      cardMain.appendChild(rank);
+      cardMain.appendChild(heldCards);
+      cardHeader.appendChild(cardMain);
+      cardHeader.appendChild(evBadge);
+      cardHeader.appendChild(expandIcon);
+      
+      // Card details (collapsible)
+      const cardDetails = document.createElement('div');
+      cardDetails.className = 'result-card-details';
+      
+      const detailsContent = document.createElement('div');
+      detailsContent.className = 'result-card-details-content';
+      
+      // Basic details
+      const detailsHTML = `
+        <div class="result-detail-row">
+          <span class="result-detail-label">EV Penalty:</span>
+          <span class="result-detail-value">${result.penalty.toFixed(5)}</span>
+        </div>
+        <div class="result-detail-row">
+          <span class="result-detail-label">Cards Drawn:</span>
+          <span class="result-detail-value">${result.numDraws}</span>
+        </div>
+        <div class="result-detail-row">
+          <span class="result-detail-label">Possible Outcomes:</span>
+          <span class="result-detail-value">${result.totalOutcomes?.toLocaleString() || 'N/A'}</span>
+        </div>
+      `;
+      
+      detailsContent.innerHTML = detailsHTML;
+      
+      // Breakdown of hand outcomes
+      if (result.breakdown && Object.keys(result.breakdown).length > 0) {
+        const breakdown = document.createElement('div');
+        breakdown.className = 'result-breakdown';
+        
+        const breakdownTitle = document.createElement('div');
+        breakdownTitle.className = 'result-breakdown-title';
+        breakdownTitle.textContent = 'Outcome Breakdown';
+        breakdown.appendChild(breakdownTitle);
+        
+        Object.entries(result.breakdown)
+          .sort((a, b) => b[1].count - a[1].count)
+          .forEach(([hand, data]) => {
+            if (data.count > 0) {
+              const item = document.createElement('div');
+              item.className = 'result-breakdown-item';
+              const percent = ((data.count / result.totalOutcomes) * 100).toFixed(2);
+              item.innerHTML = `
+                <span>${hand}</span>
+                <span style="color: var(--accent-primary);">${data.count.toLocaleString()} (${percent}%)</span>
+              `;
+              breakdown.appendChild(item);
+            }
+          });
+        
+        detailsContent.appendChild(breakdown);
+      }
+      
+      cardDetails.appendChild(detailsContent);
+      
+      // Toggle expand/collapse
+      cardHeader.onclick = () => {
+        const isExpanded = cardDetails.classList.contains('expanded');
+        cardDetails.classList.toggle('expanded');
+        expandIcon.classList.toggle('expanded');
+      };
+      
+      card.appendChild(cardHeader);
+      card.appendChild(cardDetails);
+      
+      // Only show first showLimit, hide rest initially
+      if (idx >= showLimit) {
+        card.style.display = 'none';
+        card.dataset.hidden = 'true';
+      }
+      
+      resultsCardsContainer.appendChild(card);
+    });
+
+    this.container.appendChild(resultsCardsContainer);
+
+    // Show more button if there are hidden results
+    if (analyses.length > showLimit) {
+      const showMoreBtn = document.createElement('button');
+      showMoreBtn.className = 'btn btn-secondary';
+      showMoreBtn.textContent = `Show ${analyses.length - showLimit} More Results`;
+      showMoreBtn.style.cssText = 'margin: 20px auto; display: block; width: 100%; max-width: 400px;';
+      showMoreBtn.onclick = () => {
+        const hiddenCards = resultsCardsContainer.querySelectorAll('[data-hidden="true"]');
+        hiddenCards.forEach(card => {
+          card.style.display = 'block';
+          card.removeAttribute('data-hidden');
+        });
+        showMoreBtn.remove();
+      };
+      this.container.appendChild(showMoreBtn);
+    }
+
+    // Table of all holds (for desktop/reference)
     const tableDiv = document.createElement('div');
     tableDiv.className = 'results-table-container';
+    tableDiv.style.display = 'none'; // Hidden by default, can be toggled
 
     const table = document.createElement('table');
     table.className = 'results-table';

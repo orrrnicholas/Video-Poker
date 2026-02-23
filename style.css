@@ -143,6 +143,10 @@ html, body {
     transition: var(--transition);
     text-transform: uppercase;
     letter-spacing: 1px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-primary {
@@ -264,6 +268,7 @@ select:focus {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    min-height: 44px;
 }
 
 .game-btn:hover {
@@ -346,11 +351,35 @@ select:focus {
 .card-suit-section {
     display: grid;
     grid-template-columns: repeat(13, 1fr);
-    gap: 6px;
+    gap: 8px;
     background-color: var(--bg-secondary);
     padding: 12px;
     border-radius: 6px;
     border: 1px solid var(--border-color);
+}
+
+.card-suit-section.suit-hearts .card-btn,
+.card-suit-section.suit-diamonds .card-btn {
+    color: #ff4444;
+}
+
+.card-suit-section.suit-hearts .card-btn.selected,
+.card-suit-section.suit-diamonds .card-btn.selected {
+    background-color: #ff4444;
+    border-color: #ff4444;
+    color: white;
+}
+
+.card-suit-section.suit-clubs .card-btn,
+.card-suit-section.suit-spades .card-btn {
+    color: #aaaaaa;
+}
+
+.card-suit-section.suit-clubs .card-btn.selected,
+.card-suit-section.suit-spades .card-btn.selected {
+    background-color: var(--accent-secondary);
+    border-color: var(--accent-secondary);
+    color: white;
 }
 
 .suit-label {
@@ -374,9 +403,9 @@ select:focus {
     font-weight: bold;
     cursor: pointer;
     transition: var(--transition);
-    font-size: 13px;
+    font-size: 14px;
     text-align: center;
-    min-height: 36px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -437,7 +466,13 @@ select:focus {
     }
     
     .card-suit-section {
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(6, 1fr);
+        gap: 10px;
+    }
+    
+    .card-btn {
+        font-size: 15px;
+        min-height: 48px;
     }
 
     /* Mobile: Stack all sections vertically with paytable below game selector */
@@ -874,14 +909,24 @@ select:focus {
         font-size: 12px;
     }
 
-    .card-input-controls,
+    .card-input-controls:not(.mobile-action-bar),
     .paytable-preset-section,
     .paytable-buttons {
         flex-direction: column;
     }
 
-    .btn {
+    .btn:not(.mobile-action-bar .btn) {
         width: 100%;
+    }
+    
+    /* Keep action bar buttons side by side */
+    .mobile-action-bar {
+        flex-direction: row !important;
+    }
+    
+    .mobile-action-bar .btn {
+        flex: 1;
+        width: auto !important;
     }
 
     .select,
@@ -971,6 +1016,260 @@ select:focus {
     font-size: 16px;
     font-weight: 500;
     margin: 0;
+}
+
+/* ============================================
+   MOBILE ACTION BAR
+   ============================================ */
+
+.mobile-action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(26, 26, 26, 0.95) 0%, rgba(26, 26, 26, 1) 100%);
+    padding: 12px;
+    display: none;
+    gap: 10px;
+    z-index: 1000;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
+    border-top: 2px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .mobile-action-bar {
+        display: flex;
+    }
+    
+    /* Hide original controls on mobile */
+    .card-input-controls:not(.mobile-action-bar) {
+        display: none;
+    }
+    
+    /* Add padding to main content so action bar doesn't cover content */
+    .main-content {
+        padding-bottom: 80px;
+    }
+}
+
+.mobile-action-bar .btn {
+    flex: 1;
+    margin: 0;
+}
+
+/* ============================================
+   COLLAPSIBLE SECTIONS
+   ============================================ */
+
+.section-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: var(--bg-tertiary);
+    border-radius: 6px;
+    margin-bottom: 15px;
+    transition: var(--transition);
+}
+
+.section-header:hover {
+    background-color: rgba(74, 158, 255, 0.1);
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.collapse-icon {
+    font-size: 20px;
+    transition: transform 0.3s ease;
+    color: var(--accent-primary);
+}
+
+.collapse-icon.collapsed {
+    transform: rotate(-90deg);
+}
+
+.section-content {
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+
+.section-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+}
+
+/* ============================================
+   RESULT CARDS (COLLAPSIBLE)
+   ============================================ */
+
+.result-card {
+    background-color: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.result-card:hover {
+    border-color: var(--accent-primary);
+}
+
+.result-card.best-result {
+    border-color: var(--accent-secondary);
+    background: linear-gradient(135deg, rgba(0, 204, 102, 0.1) 0%, rgba(0, 204, 102, 0.05) 100%);
+}
+
+.result-card-header {
+    padding: 15px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.result-card-header:active {
+    background-color: rgba(74, 158, 255, 0.05);
+}
+
+.result-card-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.result-rank {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--accent-primary);
+    min-width: 35px;
+}
+
+.result-card.best-result .result-rank {
+    color: var(--accent-secondary);
+}
+
+.result-held-cards {
+    font-size: 16px;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-ev-badge {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--accent-primary);
+    background-color: rgba(74, 158, 255, 0.15);
+    padding: 6px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.result-card.best-result .result-ev-badge {
+    color: var(--accent-secondary);
+    background-color: rgba(0, 204, 102, 0.15);
+}
+
+.result-expand-icon {
+    font-size: 18px;
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.result-expand-icon.expanded {
+    transform: rotate(180deg);
+}
+
+.result-card-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    border-top: 1px solid var(--border-color);
+}
+
+.result-card-details.expanded {
+    max-height: 800px;
+}
+
+.result-card-details-content {
+    padding: 15px;
+}
+
+.result-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.result-detail-row:last-child {
+    border-bottom: none;
+}
+
+.result-detail-label {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.result-detail-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.result-breakdown {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.result-breakdown-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.result-breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 13px;
+}
+
+@media (max-width: 480px) {
+    .result-card-header {
+        padding: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .result-card-main {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    
+    .result-ev-badge {
+        font-size: 14px;
+        padding: 4px 10px;
+    }
 }
 
 /* ============================================
