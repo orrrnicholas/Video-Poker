@@ -298,16 +298,16 @@ class EVCalculator {
         name: 'Deuces Wild',
         qualifier: { rank: 'THREE_OF_A_KIND', rankValue: 2 },
         payouts: {
-          'Royal Flush': 800,           // Natural royal (no deuces)
-          'Four Deuces': 200,            // Four deuces
-          'Wild Royal Flush': 25,        // Royal with deuces
-          'Five of a Kind': 15,          // Five of a kind
-          'Straight Flush': 9,           // Straight flush
-          'Four of a Kind': 5,           // Four of a kind
-          'Full House': 3,
-          'Flush': 2,
-          'Straight': 2,
-          'Three of a Kind': 1,
+          'Royal Flush': 800,           // Natural Royal Flush
+          'Four Deuces': 200,           // Four Deuces
+          'Wild Royal Flush': 25,       // Wild Royal Flush (with deuces)
+          'Five of a Kind': 15,         // 5-of-a-kind
+          'Straight Flush': 9,          // Straight Flush
+          'Four of a Kind': 5,          // 4-of-a-kind
+          'Full House': 3,              // Full House
+          'Flush': 2,                   // Flush
+          'Straight': 2,                // Straight
+          'Three of a Kind': 1,         // 3-of-a-kind
           'Pair': 0,
           'Two Pair': 0,
           'High Card': 0
