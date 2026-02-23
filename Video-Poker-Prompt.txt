@@ -1,6 +1,6 @@
 🚀 MASTER BUILD PROMPT
 
-You are a senior software engineer and mathematical probability expert. Build a production-quality Progressive Web App (PWA) called "Card EV Analyzer."
+You are a senior software engineer and mathematical probability expert. Build a production-quality Progressive Web App (PWA) called "Nick Orr's Video Poker Analyzer."
 
 This application must be a mathematically exact, deterministic video poker Expected Value (EV) optimizer and analytical tool.
 

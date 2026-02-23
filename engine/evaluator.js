@@ -265,29 +265,29 @@ class HandEvaluator {
    * qualifier: { rank: 'PAIR', rankValue: 11 } means Jacks or better
    */
   qualifies(hand, qualifier) {
-    const eval = this.evaluate(hand);
+    const evaluation = this.evaluate(hand);
 
     if (qualifier.rank === 'PAIR') {
-      if (eval.rank < this.RANKS.PAIR) return false;
-      if (eval.rank === this.RANKS.PAIR) {
-        return eval.kickers[0] >= qualifier.rankValue;
+      if (evaluation.rank < this.RANKS.PAIR) return false;
+      if (evaluation.rank === this.RANKS.PAIR) {
+        return evaluation.kickers[0] >= qualifier.rankValue;
       }
-      if (eval.rank === this.RANKS.TWO_PAIR) {
-        return eval.kickers[0] >= qualifier.rankValue || eval.kickers[1] >= qualifier.rankValue;
+      if (evaluation.rank === this.RANKS.TWO_PAIR) {
+        return evaluation.kickers[0] >= qualifier.rankValue || evaluation.kickers[1] >= qualifier.rankValue;
       }
       // Higher hands always qualify
       return true;
     }
 
-    return eval.rank >= this.RANKS[qualifier.rank];
+    return evaluation.rank >= this.RANKS[qualifier.rank];
   }
 
   /**
    * Get the paytable category for a given hand
    */
   getPaytableCategory(hand) {
-    const eval = this.evaluate(hand);
-    return eval.category;
+    const evaluation = this.evaluate(hand);
+    return evaluation.category;
   }
 }
 

@@ -1,4 +1,4 @@
-# GitHub Pages Deployment Guide
+python -m http.server 8000# GitHub Pages Deployment Guide
 
 ## Quick Start Deployment
 
@@ -8,7 +8,7 @@
 # If you don't have a repo yet
 git init
 git add .
-git commit -m "Initial commit: Card EV Analyzer application"
+git commit -m "Initial commit: Nick Orr's Video Poker Analyzer application"
 ```
 
 ### 2. Push to GitHub
@@ -215,4 +215,4 @@ Wait 24-48 hours for DNS propagation.
 
 ---
 
-**Deployment Complete!** Your Card EV Analyzer is now live and accessible offline.
+**Deployment Complete!** Your Nick Orr's Video Poker Analyzer is now live and accessible offline.

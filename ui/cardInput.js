@@ -10,6 +10,11 @@ class CardInput {
     this.selectedCards = [];
     this.maxCards = 5;
     
+    // Multiplier configuration for Ultimate X - all default to 0
+    this.multipliers = {};  // multiplier: count (empty by default)
+    this.currentMultiplier = 1;  // multiplier value for this hand
+    this.ultimateXEnabled = false;  // Toggle for Ultimate X
+    
     this.render();
   }
 
@@ -21,6 +26,196 @@ class CardInput {
     title.textContent = 'Select 5 Cards to Analyze';
     title.className = 'card-input-title';
     this.container.appendChild(title);
+
+    // Subtitle/Instructions
+    const subtitle = document.createElement('p');
+    subtitle.textContent = 'Click 5 cards from any suit to analyze all possible holds and their expected values';
+    subtitle.className = 'card-input-subtitle';
+    this.container.appendChild(subtitle);
+
+    // Betting Configuration
+    const bettingDiv = document.createElement('div');
+    bettingDiv.style.cssText = `
+      background: rgba(74, 170, 170, 0.15);
+      border: 2px solid rgba(74, 170, 170, 0.4);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    `;
+
+    const handsLabel = document.createElement('label');
+    handsLabel.style.cssText = 'display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #aaa;';
+    handsLabel.innerHTML = `
+      <span>Hands to Play</span>
+      <input type="number" id="bettingHands" min="1" max="1000" value="10" 
+        style="padding: 6px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 14px;" />
+    `;
+    
+    // Add listener to update counter when hands value changes
+    bettingDiv.appendChild(handsLabel);
+    setTimeout(() => {
+      const handsInput = document.getElementById('bettingHands');
+      if (handsInput) {
+        handsInput.addEventListener('change', () => this.updateHandsCounterDisplay());
+      }
+    }, 0);
+
+    const creditsLabel = document.createElement('label');
+    creditsLabel.style.cssText = 'display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #aaa;';
+    creditsLabel.innerHTML = `
+      <span>Credits Per Hand</span>
+      <input type="number" id="bettingCredits" min="1" max="1000" step="0.25" value="5" 
+        style="padding: 6px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 14px;" />
+    `;
+    bettingDiv.appendChild(creditsLabel);
+
+    this.container.appendChild(bettingDiv);
+
+    // Ultimate X Toggle
+    const ultimateXToggleDiv = document.createElement('div');
+    ultimateXToggleDiv.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 10px;
+      background: rgba(100, 100, 100, 0.15);
+      border-radius: 6px;
+    `;
+
+    const toggleCheckbox = document.createElement('input');
+    toggleCheckbox.type = 'checkbox';
+    toggleCheckbox.id = 'ultimateXToggle';
+    toggleCheckbox.checked = this.ultimateXEnabled;
+    toggleCheckbox.style.cssText = 'cursor: pointer; width: 18px; height: 18px;';
+    toggleCheckbox.onchange = (e) => {
+      this.ultimateXEnabled = e.target.checked;
+      // Show/hide the multiplier section
+      const multiplierSection = document.getElementById('ultimateXSection');
+      if (multiplierSection) {
+        multiplierSection.style.display = this.ultimateXEnabled ? 'block' : 'none';
+      }
+    };
+
+    const toggleLabel = document.createElement('label');
+    toggleLabel.htmlFor = 'ultimateXToggle';
+    toggleLabel.style.cssText = 'cursor: pointer; color: #4ade80; font-weight: bold; margin: 0;';
+    toggleLabel.textContent = '⚡ Use Ultimate X Multipliers';
+
+    ultimateXToggleDiv.appendChild(toggleCheckbox);
+    ultimateXToggleDiv.appendChild(toggleLabel);
+    this.container.appendChild(ultimateXToggleDiv);
+
+    // Ultimate X Multiplier Configuration
+    const multiplierDiv = document.createElement('div');
+    multiplierDiv.id = 'ultimateXSection';
+    multiplierDiv.style.cssText = `
+      background: rgba(100, 150, 100, 0.15);
+      border: 2px solid rgba(100, 150, 100, 0.4);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 16px;
+      display: ${this.ultimateXEnabled ? 'block' : 'none'};
+    `;
+
+    const multiplierTitle = document.createElement('div');
+    multiplierTitle.style.cssText = 'font-weight: bold; color: #aaa; margin-bottom: 10px; font-size: 14px;';
+    multiplierTitle.textContent = 'Ultimate X Multiplier Setup';
+    multiplierDiv.appendChild(multiplierTitle);
+
+    // Current hand multiplier selector
+    const currentMultiplierLabel = document.createElement('label');
+    currentMultiplierLabel.style.cssText = 'display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #aaa; margin-bottom: 12px;';
+    currentMultiplierLabel.innerHTML = `
+      <span>This Hand's Multiplier (does not apply to other hands)</span>
+      <select id="currentMultiplier" style="padding: 8px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 13px;">
+        <option value="1" selected>1x</option>
+        <option value="2">2x</option>
+        <option value="3">3x</option>
+        <option value="4">4x</option>
+        <option value="5">5x</option>
+        <option value="6">6x</option>
+        <option value="7">7x</option>
+        <option value="8">8x</option>
+        <option value="9">9x</option>
+        <option value="10">10x</option>
+        <option value="11">11x</option>
+        <option value="12">12x</option>
+      </select>
+    `;
+    multiplierDiv.appendChild(currentMultiplierLabel);
+
+    // Remaining hands multiplier grid
+    const gridLabel = document.createElement('div');
+    gridLabel.style.cssText = 'font-weight: 600; color: #aaa; margin-bottom: 8px; font-size: 13px;';
+    gridLabel.textContent = 'Remaining Hands - Enter Count for Each Multiplier';
+    multiplierDiv.appendChild(gridLabel);
+
+    const multiplierGridDiv = document.createElement('div');
+    multiplierGridDiv.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    `;
+
+    // Create input fields for 1x through 12x
+    const multiplierInputs = {};
+    for (let mult = 1; mult <= 12; mult++) {
+      const label = document.createElement('label');
+      label.style.cssText = 'display: flex; flex-direction: column; gap: 4px; font-size: 12px;';
+      
+      const labelText = document.createElement('span');
+      labelText.textContent = `${mult}x`;
+      labelText.style.cssText = 'color: #aaa;';
+      
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.id = `multiplier_${mult}x`;
+      input.min = '0';
+      input.value = this.multipliers[`${mult}x`] || 0;
+      input.style.cssText = 'padding: 6px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 12px; text-align: center;';
+      
+      // Add real-time counter update
+      input.oninput = () => this.updateHandsCounterDisplay();
+      
+      multiplierInputs[`${mult}x`] = input;
+      
+      label.appendChild(labelText);
+      label.appendChild(input);
+      multiplierGridDiv.appendChild(label);
+    }
+
+    multiplierDiv.appendChild(multiplierGridDiv);
+
+    // Total hands counter
+    const totalDiv = document.createElement('div');
+    totalDiv.id = 'handsCounterDisplay';
+    totalDiv.style.cssText = `
+      background: rgba(74, 221, 255, 0.1);
+      border: 1px solid rgba(74, 221, 255, 0.3);
+      border-radius: 4px;
+      padding: 10px;
+      margin: 12px 0;
+      font-size: 13px;
+      color: #aaa;
+      text-align: center;
+      font-weight: 500;
+    `;
+    totalDiv.innerHTML = '1 (base hand) + 0 (remaining) = 1 (total)';
+    multiplierDiv.appendChild(totalDiv);
+
+    // Update button
+    const updateMultBtn = document.createElement('button');
+    updateMultBtn.textContent = 'Update Multipliers';
+    updateMultBtn.className = 'btn btn-secondary';
+    updateMultBtn.style.cssText = 'margin-top: 12px; width: 100%;';
+    updateMultBtn.onclick = () => this.updateMultipliersFromGrid(multiplierInputs);
+    multiplierDiv.appendChild(updateMultBtn);
+
+    this.container.appendChild(multiplierDiv);
 
     // Controls
     const controls = document.createElement('div');
@@ -83,6 +278,61 @@ class CardInput {
     this.container.appendChild(gridDiv);
   }
 
+  getSettings() {
+    const hands = parseInt(document.getElementById('bettingHands')?.value) || 10;
+    const credits = parseFloat(document.getElementById('bettingCredits')?.value) || 5;
+    const currentMultiplier = parseFloat(document.getElementById('currentMultiplier')?.value) || 1;
+    return { 
+      hands, 
+      credits, 
+      currentMultiplier, 
+      multipliers: this.multipliers,
+      ultimateXEnabled: this.ultimateXEnabled
+    };
+  }
+
+  parseAndSetMultipliers() {
+    const input = document.getElementById('multiplierInput')?.value || '';
+    try {
+      this.multipliers = {};
+      const pairs = input.split(',');
+      
+      for (const pair of pairs) {
+        const [mult, count] = pair.trim().split(':');
+        const multiplierValue = parseFloat(mult.replace('x', ''));
+        const countValue = parseInt(count.trim());
+        
+        if (isNaN(multiplierValue) || isNaN(countValue) || countValue < 0) {
+          throw new Error('Invalid format');
+        }
+        
+        this.multipliers[mult.trim()] = countValue;
+      }
+
+      // Update the current multiplier dropdown options
+      const selectEl = document.getElementById('currentMultiplier');
+      const currentValue = selectEl?.value;
+      selectEl.innerHTML = '';
+      
+      for (const key of Object.keys(this.multipliers)) {
+        const option = document.createElement('option');
+        option.value = parseFloat(key.replace('x', ''));
+        option.textContent = key;
+        selectEl.appendChild(option);
+      }
+      
+      // Restore previous selection or default to first
+      if (selectEl.querySelector(`option[value="${currentValue}"]`)) {
+        selectEl.value = currentValue;
+      } else {
+        selectEl.value = Object.keys(this.multipliers)[0].replace('x', '');
+      }
+      
+    } catch (e) {
+      alert('Invalid format. Use: 1x: 5, 8x: 3, 2x: 2');
+    }
+  }
+
   toggleCard(card, btnElement) {
     const idx = this.selectedCards.indexOf(card);
 
@@ -132,6 +382,76 @@ class CardInput {
 
   getSelectedCards() {
     return [...this.selectedCards];
+  }
+
+  getSettings() {
+    const hands = parseInt(document.getElementById('bettingHands')?.value) || 10;
+    const credits = parseFloat(document.getElementById('bettingCredits')?.value) || 5;
+    const currentMultiplier = parseInt(document.getElementById('currentMultiplier')?.value) || 1;
+    
+    // Get multiplier distribution
+    const multipliers = {};
+    if (this.ultimateXEnabled) {
+      for (let mult = 1; mult <= 12; mult++) {
+        const count = parseInt(document.getElementById(`multiplier_${mult}x`)?.value) || 0;
+        if (count > 0) {
+          multipliers[`${mult}x`] = count;
+        }
+      }
+    }
+    
+    return { 
+      hands, 
+      credits,
+      currentMultiplier,
+      multipliers,
+      ultimateXEnabled: this.ultimateXEnabled
+    };
+  }
+
+  updateMultipliersFromGrid(multiplierInputs) {
+    // Update from grid inputs
+    const multipliers = {};
+    let totalCount = 0;
+    
+    for (let mult = 1; mult <= 12; mult++) {
+      const count = parseInt(multiplierInputs[`${mult}x`].value) || 0;
+      if (count > 0) {
+        multipliers[`${mult}x`] = count;
+        totalCount += count;
+      }
+    }
+    
+    this.multipliers = multipliers;
+    
+    // Show feedback
+    if (totalCount > 0) {
+      this.showFeedback(`Updated: ${totalCount} hands across ${Object.keys(multipliers).length} multiplier levels`);
+    }
+  }
+
+  updateHandsCounterDisplay() {
+    // Calculate total remaining hands from grid inputs
+    let remainingHands = 0;
+    
+    for (let mult = 1; mult <= 12; mult++) {
+      const count = parseInt(document.getElementById(`multiplier_${mult}x`)?.value) || 0;
+      remainingHands += count;
+    }
+    
+    const totalHands = 1 + remainingHands;  // 1 base hand + remaining
+    const handsConfigured = parseInt(document.getElementById('bettingHands')?.value) || 1;
+    
+    // Update display
+    const display = document.getElementById('handsCounterDisplay');
+    if (display) {
+      const warningColor = totalHands !== handsConfigured ? '#ff9999' : '#aaa';
+      const warningText = totalHands !== handsConfigured ? 
+        ` ⚠️ Expected ${handsConfigured}` : '';
+      
+      display.innerHTML = `1 (base hand) + ${remainingHands} (remaining) = ${totalHands} (total)${warningText}`;
+      display.style.color = warningColor;
+    }
   }
 
   setOnAnalyze(callback) {

@@ -69,23 +69,103 @@ class EVCalculator {
    */
   _getPayout(hand) {
     const category = this.evaluator.getPaytableCategory(hand);
+    let payout = this.paytable.payouts[category];
+    
+    // Handle complex payout structures (e.g., bonus quads in Double Double Bonus)
+    if (typeof payout === 'object') {
+      const evaluation = this.evaluator.evaluate(hand);
+      if (this.paytable.name === 'Double Double Bonus') {
+        payout = this._getBonusQuadPayout(evaluation);
+      } else if (this.paytable.name === 'Deuces Wild') {
+        payout = this._getDeucesWildPayout(hand, category);
+      }
+    }
     
     // Special handling for pair - must meet minimum qualifier
     if (category === 'Pair') {
-      const eval = this.evaluator.evaluate(hand);
+      const evaluation = this.evaluator.evaluate(hand);
       // Check if this pair meets the qualifier
-      if (eval.kickers[0] < this.paytable.qualifier.rankValue) {
+      if (evaluation.kickers[0] < this.paytable.qualifier.rankValue) {
         return 0; // Doesn't qualify
       }
     }
 
-    return this.paytable.payouts[category] || 0;
+    return payout || 0;
   }
 
   /**
-   * Analyze all 32 possible holds for a given 5-card hand
-   * Returns sorted array with EV for each hold
+   * Get payout for bonus quad structure (Double Double Bonus 10/6)
+   * 4 Aces + 2-4 kicker = 400
+   * 4 Aces + 5-K kicker = 160
+   * 4 2-4 + A/2/3/4 kicker = 160
+   * 4 2-4 + 5-K kicker = 80
+   * 4 5-K = 50
    */
+  _getBonusQuadPayout(evaluation) {
+    const quadRank = evaluation.kickers[0];  // Rank of the quad (0-12 for 2-A)
+    const kickerRank = evaluation.kickers[1];  // Rank of the single kicker
+
+    // Quad Aces (rank 12)
+    if (quadRank === 12) {
+      // 2-4 kickers (rank 0-2)
+      if (kickerRank <= 2) {
+        return 400;
+      } else {
+        // 5-K kickers (rank 3-11)
+        return 160;
+      }
+    }
+
+    // Quad 2-4 (rank 0-2)
+    if (quadRank <= 2) {
+      // A/2/3/4 kickers: A=12, 2=0, 3=1, 4=2
+      if (kickerRank === 12 || kickerRank === 0 || kickerRank === 1 || kickerRank === 2) {
+        return 160;
+      } else {
+        // 5-K kickers (rank 3-11)
+        return 80;
+      }
+    }
+
+    // Quad 5-K (rank 3-11)
+    return 50;
+  }
+
+  /**
+   * Get payout for Deuces Wild "Full Pay" where:
+   * - Natural Royal (no deuces): 800
+   * - Four Deuces: 200
+   * - Wild Royal (with deuces): 25
+   * - Five of a Kind (four of a kind + deuce): 15
+   * - Four of a Kind (no deuce): 5
+   */
+  _getDeucesWildPayout(hand, category) {
+    const hasDeuce = hand.some(card => card.charAt(0) === '2');
+    const evaluation = this.evaluator.evaluate(hand);
+    const quadRank = evaluation.kickers[0];
+
+    // Royal Flush case
+    if (category === 'Royal Flush') {
+      return hasDeuce ? 25 : 800;
+    }
+
+    // Four of a Kind with a deuce = Five of a Kind
+    if (category === 'Four of a Kind' && hasDeuce) {
+      return 15;
+    }
+
+    // Standard Four of a Kind (quad of non-deuce rank)
+    if (category === 'Four of a Kind') {
+      // Four deuces (rank index 0)
+      if (quadRank === 0) {
+        return 200;
+      }
+      return 5;
+    }
+
+    // All other hands use standard payout
+    return this.paytable.payouts[category] || 0;
+  }
   analyzeAllHolds(hand) {
     const results = [];
 
@@ -164,7 +244,7 @@ class EVCalculator {
   static getPresetPaytables() {
     return [
       {
-        name: '9/6 Jacks or Better',
+        name: 'Jacks or Better',
         qualifier: { rank: 'PAIR', rankValue: 11 },
         payouts: {
           'Royal Flush': 800,
@@ -180,65 +260,46 @@ class EVCalculator {
         }
       },
       {
-        name: '8/5 Jacks or Better',
-        qualifier: { rank: 'PAIR', rankValue: 11 },
-        payouts: {
-          'Royal Flush': 800,
-          'Straight Flush': 50,
-          'Four of a Kind': 25,
-          'Full House': 8,
-          'Flush': 5,
-          'Straight': 4,
-          'Three of a Kind': 3,
-          'Two Pair': 2,
-          'Pair': 1,
-          'High Card': 0
-        }
-      },
-      {
-        name: '7/5 Jacks or Better',
-        qualifier: { rank: 'PAIR', rankValue: 11 },
-        payouts: {
-          'Royal Flush': 800,
-          'Straight Flush': 50,
-          'Four of a Kind': 25,
-          'Full House': 7,
-          'Flush': 5,
-          'Straight': 4,
-          'Three of a Kind': 3,
-          'Two Pair': 2,
-          'Pair': 1,
-          'High Card': 0
-        }
-      },
-      {
-        name: '6/5 Jacks or Better',
-        qualifier: { rank: 'PAIR', rankValue: 11 },
-        payouts: {
-          'Royal Flush': 800,
-          'Straight Flush': 50,
-          'Four of a Kind': 25,
-          'Full House': 6,
-          'Flush': 5,
-          'Straight': 4,
-          'Three of a Kind': 3,
-          'Two Pair': 2,
-          'Pair': 1,
-          'High Card': 0
-        }
-      },
-      {
         name: 'Deuces Wild',
         qualifier: { rank: 'THREE_OF_A_KIND', rankValue: 2 },
         payouts: {
-          'Royal Flush': 800,
-          'Four of a Kind': 200,
-          'Straight Flush': 50,
-          'Full House': 13,
-          'Flush': 11,
-          'Straight': 4,
+          'Royal Flush': {  // Handled by _getDeucesWildPayout
+            'Natural royal flush': 800,
+            'Wild royal flush': 25
+          },
+          'Four of a Kind': {  // Handled by _getDeucesWildPayout
+            'Four deuces': 200,
+            'Five of a kind': 15,
+            'Four of a kind': 5
+          },
+          'Straight Flush': 9,
+          'Full House': 3,
+          'Flush': 2,
+          'Straight': 2,
           'Three of a Kind': 1,
           'Pair': 0,
+          'High Card': 0
+        }
+      },
+      {
+        name: 'Double Double Bonus',
+        qualifier: { rank: 'PAIR', rankValue: 11 },
+        payouts: {
+          'Royal Flush': 800,
+          'Straight Flush': 50,
+          'Four of a Kind': {  // Bonus quad structure
+            '4 Aces + 2-4': 400,
+            '4 Aces + 5-K': 160,
+            '4 2-4 + A-4': 160,
+            '4 2-4 + 5-K': 80,
+            '4 5-K': 50
+          },
+          'Full House': 10,
+          'Flush': 6,
+          'Straight': 4,
+          'Three of a Kind': 3,
+          'Two Pair': 1,
+          'Pair': 1,
           'High Card': 0
         }
       }

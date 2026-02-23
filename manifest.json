@@ -1,6 +1,6 @@
 {
-  "name": "Card EV Analyzer - Video Poker Expected Value Optimizer",
-  "short_name": "Card EV Analyzer",
+  "name": "Nick Orr's Video Poker Analyzer - Video Poker Expected Value Optimizer",
+  "short_name": "Nick Orr's Video Poker Analyzer",
   "description": "Professional Expected Value analyzer for video poker. Exact combinatorial calculations, custom paytables, and house edge analysis. Works fully offline.",
   "start_url": "/Video-Poker/index.html",
   "scope": "/Video-Poker/",
@@ -25,7 +25,7 @@
   "categories": ["utilities", "productivity"],
   "screenshots": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%231a1a1a' width='540' height='720'/><text x='270' y='360' font-size='120' text-anchor='middle' fill='%234a9eff' font-weight='bold'>Card EV Analyzer</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%231a1a1a' width='540' height='720'/><text x='270' y='360' font-size='120' text-anchor='middle' fill='%234a9eff' font-weight='bold'>Nick Orr's Video Poker Analyzer</text></svg>",
       "type": "image/svg+xml",
       "sizes": "540x720",
       "form_factor": "narrow"

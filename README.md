@@ -1,4 +1,4 @@
-# Card EV Analyzer - Video Poker Expected Value Optimizer
+# Nick Orr's Video Poker Analyzer - Video Poker Expected Value Optimizer
 
 A professional-grade, mathematically exact Expected Value analyzer for video poker, designed for offline use and strategic analysis.
 
@@ -340,4 +340,4 @@ For issues, questions, or suggestions, create an issue in the repository.
 
 ---
 
-**Card EV Analyzer v1.0** - Professional poker analysis, offline-first design, GitHub Pages ready.
+**Nick Orr's Video Poker Analyzer v1.0** - Professional poker analysis, offline-first design, GitHub Pages ready.
