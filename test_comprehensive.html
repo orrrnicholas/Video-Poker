@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Video Poker Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #d4d4d4; }
+        .test-section { margin: 20px 0; padding: 15px; background: #2d2d2d; border-radius: 8px; }
+        .pass { color: #4ade80; }
+        .fail { color: #f87171; }
+        .test-name { font-weight: bold; color: #60a5fa; }
+        h2 { color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <h1>Comprehensive Video Poker Analysis Test</h1>
+    <div id="output"></div>
+
+    <script src="engine/evaluator.js"></script>
+    <script src="engine/combinatorics.js"></script>
+    <script src="engine/evCalculator.js"></script>
+
+    <script>
+        const evaluator = new HandEvaluator();
+        const combinatorics = new Combinatorics();
+        const evCalculator = new EVCalculator(evaluator, combinatorics);
+
+        let output = '';
+        function log(msg, isPass = null) {
+            const className = isPass === true ? 'pass' : isPass === false ? 'fail' : '';
+            output += `<div class="${className}">${msg}</div>`;
+        }
+
+        function testHand(name, hand, expectedCategory, expectedPayout, paytableName = null) {
+            if (paytableName) {
+                const presets = EVCalculator.getPresetPaytables();
+                const paytable = presets.find(p => p.name === paytableName);
+                evCalculator.setPaytable(paytable);
+            }
+            
+            const payout = evCalculator._getPayout(hand);
+            const category = evCalculator.paytable.name === 'Deuces Wild' 
+                ? evaluator.evaluateWithWilds(hand).category 
+                : evaluator.getPaytableCategory(hand);
+            
+            const pass = category === expectedCategory && payout === expectedPayout;
+            log(`<span class="test-name">${name}</span>: ${hand.join(' ')}`, null);
+            log(`  Category: ${category} (expected: ${expectedCategory}) ${category === expectedCategory ? '✓' : '✗'}`, category === expectedCategory);
+            log(`  Payout: ${payout} (expected: ${expectedPayout}) ${payout === expectedPayout ? '✓' : '✗'}`, payout === expectedPayout);
+            log(`  Overall: ${pass ? 'PASS' : 'FAIL'}`, pass);
+            return pass;
+        }
+
+        let totalTests = 0;
+        let passedTests = 0;
+
+        // ==========================================
+        // JACKS OR BETTER TESTS
+        // ==========================================
+        log('<h2>JACKS OR BETTER TESTS</h2>', null);
+        const presets = EVCalculator.getPresetPaytables();
+        const jobPaytable = presets.find(p => p.name === 'Jacks or Better');
+        evCalculator.setPaytable(jobPaytable);
+
+        // Test pairs with different ranks
+        totalTests++;
+        if (testHand('Pair of Tens (should NOT pay)', ['TH', 'TD', '5C', '7S', '9H'], 'Pair', 0, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Pair of Jacks (should pay 1)', ['JH', 'JD', '5C', '7S', '9H'], 'Pair', 1, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Pair of Queens (should pay 1)', ['QH', 'QD', '5C', '7S', '9H'], 'Pair', 1, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Pair of Kings (should pay 1)', ['KH', 'KD', '5C', '7S', '9H'], 'Pair', 1, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Pair of Aces (should pay 1)', ['AH', 'AD', '5C', '7S', '9H'], 'Pair', 1, 'Jacks or Better')) passedTests++;
+
+        // Test two pair (always pays regardless of ranks)
+        totalTests++;
+        if (testHand('Two Pair: 10s and 9s', ['TH', 'TD', '9C', '9S', '5H'], 'Two Pair', 2, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Two Pair: Jacks and 2s', ['JH', 'JD', '2C', '2S', '5H'], 'Two Pair', 2, 'Jacks or Better')) passedTests++;
+
+        // Test other hands
+        totalTests++;
+        if (testHand('Three of a Kind', ['JH', 'JD', 'JC', '7S', '9H'], 'Three of a Kind', 3, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Straight', ['9H', 'TD', 'JC', 'QS', 'KH'], 'Straight', 4, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Flush', ['2H', '5H', '7H', 'JH', 'KH'], 'Flush', 6, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Full House', ['JH', 'JD', 'JC', '2S', '2H'], 'Full House', 9, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Four of a Kind', ['JH', 'JD', 'JC', 'JS', '9H'], 'Four of a Kind', 25, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Straight Flush', ['9H', 'TH', 'JH', 'QH', 'KH'], 'Straight Flush', 50, 'Jacks or Better')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Royal Flush', ['TH', 'JH', 'QH', 'KH', 'AH'], 'Royal Flush', 800, 'Jacks or Better')) passedTests++;
+
+        // Test Ace-low straight
+        totalTests++;
+        if (testHand('Ace-low Straight (wheel)', ['AH', '2D', '3C', '4S', '5H'], 'Straight', 4, 'Jacks or Better')) passedTests++;
+
+        // ==========================================
+        // DOUBLE DOUBLE BONUS TESTS
+        // ==========================================
+        log('<h2>DOUBLE DOUBLE BONUS TESTS</h2>', null);
+        const ddbPaytable = presets.find(p => p.name === 'Double Double Bonus');
+        evCalculator.setPaytable(ddbPaytable);
+
+        // Test bonus quads
+        totalTests++;
+        if (testHand('Four Aces with 3 kicker', ['AH', 'AD', 'AC', 'AS', '3H'], 'Four of a Kind', 400, 'Double Double Bonus')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Four Aces with 9 kicker', ['AH', 'AD', 'AC', 'AS', '9H'], 'Four of a Kind', 160, 'Double Double Bonus')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Four 3s with Ace kicker', ['3H', '3D', '3C', '3S', 'AH'], 'Four of a Kind', 160, 'Double Double Bonus')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Four 3s with 7 kicker', ['3H', '3D', '3C', '3S', '7H'], 'Four of a Kind', 80, 'Double Double Bonus')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Four 8s', ['8H', '8D', '8C', '8S', 'KH'], 'Four of a Kind', 50, 'Double Double Bonus')) passedTests++;
+
+        // Test pairs (should pay on J or better)
+        totalTests++;
+        if (testHand('DDB: Pair of Tens', ['TH', 'TD', '5C', '7S', '9H'], 'Pair', 0, 'Double Double Bonus')) passedTests++;
+        
+        totalTests++;
+        if (testHand('DDB: Pair of Jacks', ['JH', 'JD', '5C', '7S', '9H'], 'Pair', 1, 'Double Double Bonus')) passedTests++;
+
+        // ==========================================
+        // DEUCES WILD TESTS
+        // ==========================================
+        log('<h2>DEUCES WILD TESTS</h2>', null);
+        const dwPaytable = presets.find(p => p.name === 'Deuces Wild');
+        evCalculator.setPaytable(dwPaytable);
+
+        // Natural royal (no deuces)
+        totalTests++;
+        if (testHand('Natural Royal Flush', ['TH', 'JH', 'QH', 'KH', 'AH'], 'Royal Flush', 800, 'Deuces Wild')) passedTests++;
+
+        // Four deuces
+        totalTests++;
+        if (testHand('Four Deuces', ['2H', '2D', '2C', '2S', '5H'], 'Four Deuces', 200, 'Deuces Wild')) passedTests++;
+
+        // Wild royal (with deuces)
+        totalTests++;
+        if (testHand('Wild Royal Flush', ['2H', 'JH', 'QH', 'KH', 'AH'], 'Wild Royal Flush', 25, 'Deuces Wild')) passedTests++;
+
+        // Five of a kind
+        totalTests++;
+        if (testHand('Five of a Kind', ['2H', '2D', 'AH', 'AC', 'AS'], 'Five of a Kind', 15, 'Deuces Wild')) passedTests++;
+
+        // Regular straight flush
+        totalTests++;
+        if (testHand('Straight Flush with wild', ['2H', '3H', '4H', '5H', '6H'], 'Straight Flush', 9, 'Deuces Wild')) passedTests++;
+
+        // Four of a kind
+        totalTests++;
+        if (testHand('Four Aces (natural)', ['AH', 'AD', 'AC', 'AS', '5H'], 'Four of a Kind', 5, 'Deuces Wild')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Four Aces (with wild)', ['2H', 'AH', 'AD', 'AC', '5H'], 'Four of a Kind', 5, 'Deuces Wild')) passedTests++;
+
+        // Three of a kind (minimum paying hand)
+        totalTests++;
+        if (testHand('Three of a Kind', ['AH', 'AD', 'AC', '5H', '7C'], 'Three of a Kind', 1, 'Deuces Wild')) passedTests++;
+
+        // Non-paying hands
+        totalTests++;
+        if (testHand('Pair (no pay)', ['AH', 'AD', '5C', '7S', '9H'], 'Pair', 0, 'Deuces Wild')) passedTests++;
+        
+        totalTests++;
+        if (testHand('Two Pair (no pay)', ['AH', 'AD', '5C', '5S', '9H'], 'Two Pair', 0, 'Deuces Wild')) passedTests++;
+
+        // ==========================================
+        // SUMMARY
+        // ==========================================
+        log('<h2>TEST SUMMARY</h2>', null);
+        log(`Total Tests: ${totalTests}`, null);
+        log(`Passed: ${passedTests}`, passedTests === totalTests);
+        log(`Failed: ${totalTests - passedTests}`, totalTests - passedTests === 0);
+        log(`Success Rate: ${((passedTests / totalTests) * 100).toFixed(1)}%`, passedTests === totalTests);
+
+        document.getElementById('output').innerHTML = output;
+    </script>
+</body>
+</html>

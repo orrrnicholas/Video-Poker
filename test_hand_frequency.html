@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hand Frequency Tests</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #d4d4d4; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+    .test-name { font-weight: bold; color: #60a5fa; }
+    h1, h2 { color: #fbbf24; }
+    .section { margin: 16px 0; padding: 12px; background: #2d2d2d; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Hand Frequency Tests</h1>
+  <div id="output" class="section"></div>
+  <div id="results-container"></div>
+
+  <script src="engine/evaluator.js"></script>
+  <script src="engine/combinatorics.js"></script>
+  <script src="engine/evCalculator.js"></script>
+  <script src="ui/resultsView.js"></script>
+
+  <script>
+    const evaluator = new HandEvaluator();
+    const combinatorics = new Combinatorics();
+    const evCalculator = new EVCalculator(evaluator, combinatorics);
+
+    const paytableEditor = { currentPaytable: null };
+    const resultsView = new ResultsView('results-container', null, paytableEditor, evaluator, combinatorics);
+
+    const presets = EVCalculator.getPresetPaytables();
+    const output = document.getElementById('output');
+
+    let total = 0;
+    let passed = 0;
+
+    function log(msg, isPass = null) {
+      const className = isPass === true ? 'pass' : isPass === false ? 'fail' : '';
+      output.innerHTML += `<div class="${className}">${msg}</div>`;
+    }
+
+    function assert(name, condition, details = '') {
+      total++;
+      if (condition) {
+        passed++;
+        log(`<span class="test-name">PASS</span> ${name}`);
+      } else {
+        log(`<span class="test-name">FAIL</span> ${name}${details ? ' - ' + details : ''}`, false);
+      }
+    }
+
+    function setPaytable(name) {
+      const paytable = presets.find(p => p.name === name);
+      evCalculator.setPaytable(paytable);
+      paytableEditor.currentPaytable = paytable;
+      return paytable;
+    }
+
+    function runFrequencyTest(gameName, hand, expectedSnippets) {
+      log(`<h2>${gameName}</h2>`);
+      setPaytable(gameName);
+
+      const analyses = evCalculator.analyzeAllHolds(hand);
+      resultsView.display(hand, analyses);
+
+      const display = document.getElementById('sessionCalculatorDisplay');
+      const text = display ? display.textContent : '';
+
+      assert('Hand Frequency block exists', text.includes('Hand Frequency'));
+      assert('Expected line exists', text.includes('Expected: 1'));
+
+      expectedSnippets.forEach(snippet => {
+        assert(`Contains: ${snippet}`, text.includes(snippet));
+      });
+    }
+
+    runFrequencyTest(
+      'Jacks or Better',
+      ['AH', 'AD', 'AC', '5S', '3H'],
+      ['Four of a Kind']
+    );
+
+    runFrequencyTest(
+      'Double Double Bonus',
+      ['AH', 'AD', 'AC', '5S', '3H'],
+      ['Four of a Kind', '4 Aces + 2-4', '4 Aces + 5-K']
+    );
+
+    runFrequencyTest(
+      'Deuces Wild',
+      ['2S', '2H', '2D', 'AS', 'KS'],
+      ['Wild Royal Flush']
+    );
+
+    log('<h2>Summary</h2>');
+    log(`Total: ${total}`);
+    log(`Passed: ${passed}`, passed === total);
+    log(`Failed: ${total - passed}`, (total - passed) === 0);
+  </script>
+</body>
+</html>

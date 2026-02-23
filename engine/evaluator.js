@@ -199,7 +199,7 @@ class HandEvaluator {
     // Check for regular straights (Ace-high down to 5-high)
     for (let high = 12; high >= 4; high--) {
       if (rankFreq[high] && rankFreq[high - 1] && rankFreq[high - 2] && rankFreq[high - 3] && rankFreq[high - 4]) {
-        return high + 1; // Return the actual rank value (13 for K, 14 for A)
+        return high + 2; // Return the actual rank value (13 for K, 14 for A)
       }
     }
 
@@ -534,7 +534,7 @@ class HandEvaluator {
       const needed = [high, high - 1, high - 2, high - 3, high - 4];
       const matches = needed.filter(r => rankIndices.includes(r)).length;
       if (matches + numWilds >= 5) {
-        return high + 1; // Return actual rank value
+        return high + 2; // Return actual rank value
       }
     }
     

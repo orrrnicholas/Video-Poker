@@ -616,10 +616,19 @@ class ResultsView {
         // If a specific detail is required (e.g., "4 Aces + 2-4"), check it
         if (targetDetail) {
           if (targetHandCategory === 'Four of a Kind') {
-            const quadRank = evaluation.kickers[0];
-            const kickerRank = evaluation.kickers[1];
-            const variant = this._getQuadBonusCategory(quadRank, kickerRank);
-            if (variant === targetDetail) {
+            const paytable = this.paytableEditor?.currentPaytable;
+            const fourKindPayout = paytable?.payouts?.['Four of a Kind'];
+            const hasBonusVariants = fourKindPayout && typeof fourKindPayout === 'object';
+
+            if (hasBonusVariants) {
+              const quadRank = evaluation.kickers[0];
+              const kickerRank = evaluation.kickers[1];
+              const variant = this._getQuadBonusCategory(quadRank, kickerRank);
+              if (variant === targetDetail) {
+                matchCount++;
+              }
+            } else if (targetDetail === targetHandCategory) {
+              // Standard paytable: count all four of a kind outcomes
               matchCount++;
             }
           } else {

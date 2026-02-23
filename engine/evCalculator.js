@@ -11,7 +11,7 @@ class EVCalculator {
     // Default paytable (9/6 Jacks or Better)
     this.defaultPaytable = {
       name: '9/6 Jacks or Better',
-      qualifier: { rank: 'PAIR', rankValue: 11 }, // Jack or better to qualify
+      qualifier: { rank: 'PAIR', rankValue: 9 }, // Jack or better to qualify
       payouts: {
         'Royal Flush': 800,
         'Straight Flush': 50,
@@ -280,7 +280,7 @@ class EVCalculator {
     return [
       {
         name: 'Jacks or Better',
-        qualifier: { rank: 'PAIR', rankValue: 11 },
+        qualifier: { rank: 'PAIR', rankValue: 9 },
         payouts: {
           'Royal Flush': 800,
           'Straight Flush': 50,
@@ -315,7 +315,7 @@ class EVCalculator {
       },
       {
         name: 'Double Double Bonus',
-        qualifier: { rank: 'PAIR', rankValue: 11 },
+        qualifier: { rank: 'PAIR', rankValue: 9 },
         payouts: {
           'Royal Flush': 800,
           'Straight Flush': 50,
