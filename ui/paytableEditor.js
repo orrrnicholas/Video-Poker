@@ -135,8 +135,11 @@ class PaytableEditor {
         headerRow.appendChild(headerCell);
         tbody.appendChild(headerRow);
         
-        // Add each sub-category
+        // Add each sub-category (skip if payout is 0)
         for (const [subCategory, value] of Object.entries(payout)) {
+          // Skip entries with 0 payouts
+          if (value === 0) continue;
+          
           const row = document.createElement('tr');
           const cellHand = document.createElement('td');
           cellHand.textContent = `  └─ ${subCategory}`;
@@ -156,6 +159,9 @@ class PaytableEditor {
           tbody.appendChild(row);
         }
       } else {
+        // Skip entries with 0 payouts
+        if (payout === 0) continue;
+        
         // Standard numeric payout
         const row = document.createElement('tr');
         const cellHand = document.createElement('td');
@@ -203,6 +209,7 @@ class PaytableEditor {
 
   updatePaytable(hand, payout) {
     this.currentPaytable.payouts[hand] = payout;
+    this.render();
     this.showUpdateConfirmation();
     if (this.onPaytableChange) this.onPaytableChange(this.currentPaytable);
   }
@@ -212,6 +219,7 @@ class PaytableEditor {
       this.currentPaytable.payouts[hand] = {};
     }
     this.currentPaytable.payouts[hand][subCategory] = payout;
+    this.render();
     this.showUpdateConfirmation();
     if (this.onPaytableChange) this.onPaytableChange(this.currentPaytable);
   }

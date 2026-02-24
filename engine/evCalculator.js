@@ -21,7 +21,7 @@ class EVCalculator {
         'Straight': 20,
         'Three of a Kind': 15,
         'Two Pair': 10,
-        'Pair': 5, // Must be Jacks or better
+        'Jacks or Better': 5,
         'High Card': 0
       }
     };
@@ -94,35 +94,49 @@ class EVCalculator {
   }
 
   /**
+   * Get the lookup key for a hand category in the paytable
+   * Maps 'Pair' to 'Jacks or Better' for games that display it that way
+   */
+  _getPayoutKey(category) {
+    // For certain games, display 'Pair' category with 'Jacks or Better' key
+    if (category === 'Pair' && 
+        (this.paytable.name === 'Jacks or Better' || 
+         this.paytable.name === 'Double Double Bonus' || 
+         this.paytable.name === 'Triple Double Bonus')) {
+      return 'Jacks or Better';
+    }
+    return category;
+  }
+
+  /**
    * Get the payout for a specific hand
    */
   _getPayout(hand) {
     // Use wild card evaluation for Deuces Wild
-    const category = this.paytable.name === 'Deuces Wild' 
-      ? this.evaluator.evaluateWithWilds(hand).category
-      : this.evaluator.getPaytableCategory(hand);
+    const evaluation = this.paytable.name === 'Deuces Wild' 
+      ? this.evaluator.evaluateWithWilds(hand)
+      : this.evaluator.evaluate(hand);
     
-    let payout = this.paytable.payouts[category];
+    const category = evaluation.category;
+    
+    // Special handling for pair - check if it meets the minimum qualifier
+    if (category === 'Pair') {
+      const pairRank = evaluation.pairRank;
+      // Check if this pair meets the qualifier
+      if (pairRank < this.paytable.qualifier.rankValue) {
+        return 0; // Doesn't qualify
+      }
+    }
+    
+    const payoutKey = this._getPayoutKey(category);
+    let payout = this.paytable.payouts[payoutKey];
     
     // Handle complex payout structures (e.g., bonus quads in Double Double Bonus)
     if (typeof payout === 'object') {
-      const evaluation = this.paytable.name === 'Deuces Wild'
-        ? this.evaluator.evaluateWithWilds(hand)
-        : this.evaluator.evaluate(hand);
-        
       if (this.paytable.name === 'Double Double Bonus' || this.paytable.name === 'Triple Double Bonus') {
         payout = this._getBonusQuadPayout(evaluation, this.paytable);
       } else if (this.paytable.name === 'Deuces Wild') {
         payout = this._getDeucesWildPayout(hand, category, evaluation);
-      }
-    }
-    
-    // Special handling for pair - must meet minimum qualifier
-    if (category === 'Pair') {
-      const evaluation = this.evaluator.evaluate(hand);
-      // Check if this pair meets the qualifier
-      if (evaluation.kickers[0] < this.paytable.qualifier.rankValue) {
-        return 0; // Doesn't qualify
       }
     }
 
@@ -300,8 +314,7 @@ class EVCalculator {
           'Straight': 20,
           'Three of a Kind': 15,
           'Two Pair': 10,
-          'Pair': 5,
-          'High Card': 0
+          'Jacks or Better': 5
         }
       },
       {
@@ -317,10 +330,7 @@ class EVCalculator {
           'Full House': 15,              // Full House
           'Flush': 10,                   // Flush
           'Straight': 10,                // Straight
-          'Three of a Kind': 5,         // 3-of-a-kind
-          'Pair': 0,
-          'Two Pair': 0,
-          'High Card': 0
+          'Three of a Kind': 5         // 3-of-a-kind
         }
       },
       {
@@ -341,8 +351,7 @@ class EVCalculator {
           'Straight': 20,
           'Three of a Kind': 15,
           'Two Pair': 5,
-          'Pair': 5,
-          'High Card': 0
+          'Jacks or Better': 5
         }
       },
       {
@@ -363,8 +372,7 @@ class EVCalculator {
           'Straight': 20,
           'Three of a Kind': 10,
           'Two Pair': 5,
-          'Pair': 5,
-          'High Card': 0
+          'Jacks or Better': 5
         }
       }
     ];

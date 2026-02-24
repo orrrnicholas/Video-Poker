@@ -498,7 +498,7 @@ class ResultsView {
 
     const isPositive = expectedProfit >= 0;
     const color = isPositive ? '#4ade80' : '#ff6666';
-    const sign = isPositive ? '+' : '';
+    const sign = isPositive ? '+' : '-';
 
     let multiplierInfo = '';
     if (ultimateXEnabled && currentMultiplier > 1) {
@@ -700,6 +700,7 @@ class ResultsView {
       'Three of a Kind',
       'Two Pair',
       'Pair',
+      'Jacks or Better',
       'High Card'
     ];
 
@@ -760,6 +761,7 @@ class ResultsView {
       'Three of a Kind',
       'Two Pair',
       'Pair',
+      'Jacks or Better',
       'High Card'
     ];
 

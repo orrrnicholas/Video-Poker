@@ -170,6 +170,7 @@ class HandEvaluator {
       return {
         rank: this.RANKS.PAIR,
         category: 'Pair',
+        pairRank: pairRank,
         kickers: [pairRank, ...kickers]
       };
     }
