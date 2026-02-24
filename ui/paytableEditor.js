@@ -107,7 +107,7 @@ class PaytableEditor {
     const handHeader = document.createElement('th');
     handHeader.textContent = 'Hand';
     const payoutHeader = document.createElement('th');
-    payoutHeader.textContent = 'Payout (per coin)';
+    payoutHeader.textContent = 'Payout';
     headerRow.appendChild(handHeader);
     headerRow.appendChild(payoutHeader);
     thead.appendChild(headerRow);

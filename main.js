@@ -14,7 +14,7 @@ class CardEVAnalyzer {
 
     // Initialize UI components
     try {
-      this.gameSelector = new GameSelector('game-selector-container');
+      this.gameSelector = new GameSelector('game-selector-container', this.evCalculator);
       console.log('✓ GameSelector created');
     } catch(e) {
       console.error('✗ GameSelector error:', e);
@@ -66,6 +66,13 @@ class CardEVAnalyzer {
         this.paytableEditor.setPaytable(paytable);
         this.evCalculator.setPaytable(paytable);
         this.saveState();
+        
+        // Reset RTP to default when switching to a preset game
+        const selectedGame = this.gameSelector.getSelectedGame();
+        if (selectedGame) {
+          this.gameSelector.resetGameRTP(selectedGame);
+        }
+        
         // Re-analyze if hand is currently displayed
         if (!this.resultsView.hidden && this.cardInput.selectedCards.length === 5) {
           this.analyzeHand();
@@ -80,6 +87,13 @@ class CardEVAnalyzer {
     this.paytableEditor.setOnChange((paytable) => {
       this.evCalculator.setPaytable(paytable);
       this.saveState();
+      
+      // Mark the game as modified (don't calculate RTP to avoid freezing)
+      const selectedGame = this.gameSelector.getSelectedGame();
+      if (selectedGame) {
+        this.gameSelector.updateGameRTP(selectedGame, null, true);
+      }
+      
       // Re-analyze if hand is currently displayed
       if (!this.resultsView.hidden && this.cardInput.selectedCards.length === 5) {
         this.analyzeHand();
@@ -103,6 +117,10 @@ class CardEVAnalyzer {
     // Defer analysis to allow UI to update
     setTimeout(() => {
       try {
+        // Get Ultimate X settings and update EV calculator
+        const settings = this.cardInput.getSettings();
+        this.evCalculator.setUltimateXSettings(settings.ultimateXEnabled, settings.credits);
+        
         // Analyze all holds
         const analyses = this.evCalculator.analyzeAllHolds(hand);
 

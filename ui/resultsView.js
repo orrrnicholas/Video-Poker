@@ -16,7 +16,7 @@ class ResultsView {
     this.currentBestHold = null;  // Store the best hold for current hand
     
     // Session calculator settings
-    this.numHands = 10;
+    this.numHands = 1;
     this.creditsPerHand = 5;
     this.currentEV = null;
     this.hasSetEV = false;
@@ -435,8 +435,9 @@ class ResultsView {
     }
 
     const totalBet = credits * hands;
-    const expectedReturn = sessionEV * credits;
-    const returnPercent = (expectedReturn / totalBet) * 100;
+    const totalPayout = sessionEV;  // sessionEV already accounts for multipliers if Ultimate X enabled
+    const returnPercent = (totalPayout / totalBet) * 100;
+    const expectedProfit = totalPayout - totalBet;  // Net profit (can be negative)
 
     // Calculate hand probability info
     let handProbabilityInfo = '';
@@ -495,7 +496,7 @@ class ResultsView {
     const displayDiv = document.getElementById('sessionCalculatorDisplay');
     if (!displayDiv) return;
 
-    const isPositive = expectedReturn >= 0;
+    const isPositive = expectedProfit >= 0;
     const color = isPositive ? '#4ade80' : '#ff6666';
     const sign = isPositive ? '+' : '';
 
@@ -523,12 +524,12 @@ class ResultsView {
         padding: 10px;
         border-radius: 4px;
       ">
-        <div style="font-size: 12px; color: #aaa; margin-bottom: 4px;">Expected Session Return</div>
-        <div style="font-size: 24px; color: ${color}; font-weight: bold;">${sign}${Math.abs(expectedReturn).toFixed(2)} credits</div>
+        <div style="font-size: 12px; color: #aaa; margin-bottom: 4px;">Expected Session Profit</div>
+        <div style="font-size: 24px; color: ${color}; font-weight: bold;">${sign}${Math.abs(expectedProfit).toFixed(2)} credits</div>
         <div style="font-size: 11px; color: #aaa; margin-top: 6px;">
           ${isPositive 
-            ? `Expect to <span style="color: #4ade80;">gain</span> about <strong>${expectedReturn.toFixed(2)}</strong> credits over ${hands} hands.` 
-            : `Expect to <span style="color: #ff6666;">lose</span> about <strong>${Math.abs(expectedReturn).toFixed(2)}</strong> credits over ${hands} hands.`}
+            ? `Expect to <span style="color: #4ade80;">gain</span> about <strong>${expectedProfit.toFixed(2)}</strong> credits over ${hands} hands.` 
+            : `Expect to <span style="color: #ff6666;">lose</span> about <strong>${Math.abs(expectedProfit).toFixed(2)}</strong> credits over ${hands} hands.`}
         </div>
         ${multiplierInfo}
         ${handProbabilityInfo}

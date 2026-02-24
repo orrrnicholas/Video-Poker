@@ -44,19 +44,6 @@
           "type": "image/svg+xml"
         }
       ]
-    },
-    {
-      "name": "House Edge",
-      "short_name": "House Edge",
-      "description": "Calculate paytable house edge",
-      "url": "/Video-Poker/index.html?tab=houseEdge",
-      "icons": [
-        {
-          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%4a9eff' width='96' height='96'/><text x='48' y='70' font-size='60' text-anchor='middle' fill='%23fff' font-weight='bold'>%</text></svg>",
-          "sizes": "96x96",
-          "type": "image/svg+xml"
-        }
-      ]
     }
   ],
   "prefer_related_applications": false

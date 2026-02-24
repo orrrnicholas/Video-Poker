@@ -70,7 +70,7 @@ class CardInput {
     handsLabel.style.cssText = 'display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #aaa;';
     handsLabel.innerHTML = `
       <span>Hands to Play</span>
-      <input type="number" id="bettingHands" min="1" max="1000" value="10" 
+      <input type="number" id="bettingHands" min="1" max="1000" value="1" 
         style="padding: 6px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 14px;" />
     `;
     
@@ -84,11 +84,12 @@ class CardInput {
     }, 0);
 
     const creditsLabel = document.createElement('label');
+    creditsLabel.setAttribute('for', 'bettingCredits');
     creditsLabel.style.cssText = 'display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #aaa;';
     creditsLabel.innerHTML = `
-      <span>Credits Per Hand</span>
-      <input type="number" id="bettingCredits" min="1" max="1000" step="0.25" value="5" 
-        style="padding: 6px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 14px;" />
+      <span>Credits Per Hand ${this.ultimateXEnabled ? '<span style="color: #4ade80;">(Fixed at 10 for Ultimate X)</span>' : ''}</span>
+      <input type="number" id="bettingCredits" min="1" max="1000" step="0.25" value="${this.ultimateXEnabled ? '10' : '5'}" 
+        ${this.ultimateXEnabled ? 'disabled style="padding: 6px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 14px; opacity: 0.6; cursor: not-allowed;"' : 'style="padding: 6px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 14px;"'} />
     `;
     bettingDiv.appendChild(creditsLabel);
 
@@ -118,12 +119,42 @@ class CardInput {
       if (multiplierSection) {
         multiplierSection.style.display = this.ultimateXEnabled ? 'block' : 'none';
       }
+      
+      // Update credits per hand based on Ultimate X status
+      const creditsInput = document.getElementById('bettingCredits');
+      const creditsLabelSpan = document.querySelector('label[for="bettingCredits"] > span');
+      
+      if (creditsInput) {
+        if (this.ultimateXEnabled) {
+          // Ultimate X requires 10 credits per hand (2x the base bet)
+          creditsInput.value = 10;
+          creditsInput.disabled = true;
+          creditsInput.style.opacity = '0.6';
+          creditsInput.style.cursor = 'not-allowed';
+          
+          // Update label
+          if (creditsLabelSpan) {
+            creditsLabelSpan.innerHTML = 'Credits Per Hand <span style="color: #4ade80;">(Fixed at 10 for Ultimate X)</span>';
+          }
+        } else {
+          // Normal mode - allow custom credits
+          creditsInput.value = 5;
+          creditsInput.disabled = false;
+          creditsInput.style.opacity = '1';
+          creditsInput.style.cursor = '';
+          
+          // Update label
+          if (creditsLabelSpan) {
+            creditsLabelSpan.textContent = 'Credits Per Hand';
+          }
+        }
+      }
     };
 
     const toggleLabel = document.createElement('label');
     toggleLabel.htmlFor = 'ultimateXToggle';
     toggleLabel.style.cssText = 'cursor: pointer; color: #4ade80; font-weight: bold; margin: 0;';
-    toggleLabel.textContent = '⚡ Use Ultimate X Multipliers';
+    toggleLabel.innerHTML = '⚡ Use Ultimate X Multipliers <span style="font-size: 11px; font-weight: normal; color: #aaa;">(10 credits/hand)</span>';
 
     ultimateXToggleDiv.appendChild(toggleCheckbox);
     ultimateXToggleDiv.appendChild(toggleLabel);
@@ -326,19 +357,6 @@ class CardInput {
     this.container.appendChild(content);
   }
 
-  getSettings() {
-    const hands = parseInt(document.getElementById('bettingHands')?.value) || 10;
-    const credits = parseFloat(document.getElementById('bettingCredits')?.value) || 5;
-    const currentMultiplier = parseFloat(document.getElementById('currentMultiplier')?.value) || 1;
-    return { 
-      hands, 
-      credits, 
-      currentMultiplier, 
-      multipliers: this.multipliers,
-      ultimateXEnabled: this.ultimateXEnabled
-    };
-  }
-
   parseAndSetMultipliers() {
     const input = document.getElementById('multiplierInput')?.value || '';
     try {
@@ -442,8 +460,14 @@ class CardInput {
   }
 
   getSettings() {
-    const hands = parseInt(document.getElementById('bettingHands')?.value) || 10;
-    const credits = parseFloat(document.getElementById('bettingCredits')?.value) || 5;
+    const hands = parseInt(document.getElementById('bettingHands')?.value) || 1;
+    let credits = parseFloat(document.getElementById('bettingCredits')?.value) || 5;
+    
+    // Ultimate X always uses 10 credits per hand (double the base bet)
+    if (this.ultimateXEnabled) {
+      credits = 10;
+    }
+    
     const currentMultiplier = parseInt(document.getElementById('currentMultiplier')?.value) || 1;
     
     // Get multiplier distribution

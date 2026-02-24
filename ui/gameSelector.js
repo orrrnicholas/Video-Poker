@@ -4,20 +4,23 @@
  */
 
 class GameSelector {
-  constructor(containerId) {
+  constructor(containerId, evCalculator = null) {
     this.containerId = containerId;
     this.container = document.getElementById(containerId);
     this.onGameSelect = null;
     this.selectedGame = null;
+    this.evCalculator = evCalculator;
 
     // Game definitions organized by category
+    // RTP values are for default paytables
     this.games = {
       'Classic Games': [
-        { id: 'jacks', name: 'Jacks or Better', rtp: '99.55%' },
-        { id: 'deuces', name: 'Deuces Wild', rtp: '100.76%' }
+        { id: 'jacks', name: 'Jacks or Better', rtp: '99.54%', defaultRtp: '99.54%', modified: false },
+        { id: 'deuces', name: 'Deuces Wild', rtp: '100.76%', defaultRtp: '100.76%', modified: false }
       ],
       'Bonus Games': [
-        { id: 'double-bonus', name: 'Double Double Bonus', rtp: '99.27%' }
+        { id: 'double-bonus', name: 'Double Double Bonus', rtp: '98.98%', defaultRtp: '98.98%', modified: false },
+        { id: 'triple-double-bonus', name: 'Triple Double Bonus', rtp: '99.58%', defaultRtp: '99.58%', modified: false }
       ]
     };
 
@@ -114,7 +117,8 @@ class GameSelector {
     const gameMap = {
       'jacks': 'Jacks or Better',
       'deuces': 'Deuces Wild',
-      'double-bonus': 'Double Double Bonus'
+      'double-bonus': 'Double Double Bonus',
+      'triple-double-bonus': 'Triple Double Bonus'
     };
 
     if (this.onGameSelect) {
@@ -128,5 +132,115 @@ class GameSelector {
 
   getSelectedGame() {
     return this.selectedGame;
+  }
+
+  /**
+   * Set the EV calculator instance for RTP calculations
+   */
+  setEVCalculator(evCalculator) {
+    this.evCalculator = evCalculator;
+  }
+
+  /**
+   * Update RTP for a specific game
+   * @param {string} gameId - The game ID (e.g., 'jacks', 'deuces')
+   * @param {number|null} rtpPercent - The RTP percentage (e.g., 99.54) or null to just mark as modified
+   * @param {boolean} isModified - Whether this is a custom/modified paytable
+   */
+  updateGameRTP(gameId, rtpPercent = null, isModified = false) {
+    // Find the game in the games object
+    for (const [category, games] of Object.entries(this.games)) {
+      const game = games.find(g => g.id === gameId);
+      if (game) {
+        game.modified = isModified;
+        
+        // Update the display if already rendered
+        const gameBtn = document.querySelector(`[data-game-id="${gameId}"]`);
+        if (gameBtn) {
+          const rtpDiv = gameBtn.querySelector('.game-rtp');
+          if (rtpDiv) {
+            if (isModified) {
+              // Just show "Modified" without calculating exact RTP
+              rtpDiv.textContent = `RTP: ${game.defaultRtp} (Modified)`;
+              rtpDiv.style.color = '#ffa500'; // Orange color for modified
+              rtpDiv.title = 'Paytable has been customized. RTP will differ from default.';
+            } else {
+              // Show default RTP
+              rtpDiv.textContent = `RTP: ${game.defaultRtp}`;
+              rtpDiv.style.color = ''; // Reset to default
+              rtpDiv.title = '';
+            }
+          }
+        }
+        return;
+      }
+    }
+  }
+
+  /**
+   * Calculate and update RTP for a specific game using its default paytable
+   * @param {string} gameId - The game ID (e.g., 'jacks', 'deuces')
+   * @param {Function} callback - Optional callback when calculation completes
+   */
+  calculateGameRTP(gameId, callback = null) {
+    if (!this.evCalculator) {
+      console.error('EV Calculator not set');
+      return;
+    }
+
+    // Map game ID to paytable name
+    const gameMap = {
+      'jacks': 'Jacks or Better',
+      'deuces': 'Deuces Wild',
+      'double-bonus': 'Double Double Bonus',
+      'triple-double-bonus': 'Triple Double Bonus'
+    };
+
+    const gameName = gameMap[gameId];
+    if (!gameName) return;
+
+    // Find the paytable
+    const presets = EVCalculator.getPresetPaytables();
+    const paytable = presets.find(p => p.name === gameName);
+    if (!paytable) return;
+
+    // Calculate in background to avoid blocking UI
+    setTimeout(() => {
+      const originalPaytable = this.evCalculator.paytable;
+      this.evCalculator.setPaytable(paytable);
+      
+      const result = this.evCalculator.calculateHouseEdge();
+      this.updateGameRTP(gameId, result.overallReturnPercent);
+      
+      // Restore original paytable
+      this.evCalculator.setPaytable(originalPaytable);
+      
+      if (callback) callback(gameId, result.overallReturnPercent);
+    }, 0);
+  }
+
+  /**
+   * Reset RTP to default for a specific game
+   * @param {string} gameId - The game ID (e.g., 'jacks', 'deuces')
+   */
+  resetGameRTP(gameId) {
+    for (const [category, games] of Object.entries(this.games)) {
+      const game = games.find(g => g.id === gameId);
+      if (game) {
+        game.modified = false;
+        game.rtp = game.defaultRtp;
+        
+        // Update the display if already rendered
+        const gameBtn = document.querySelector(`[data-game-id="${gameId}"]`);
+        if (gameBtn) {
+          const rtpDiv = gameBtn.querySelector('.game-rtp');
+          if (rtpDiv) {
+            rtpDiv.textContent = `RTP: ${game.rtp}`;
+            rtpDiv.style.color = ''; // Reset to default color
+          }
+        }
+        return;
+      }
+    }
   }
 }

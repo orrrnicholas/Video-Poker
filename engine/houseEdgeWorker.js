@@ -5,6 +5,9 @@
  * Sends: progress and result messages
  */
 
+// Import required scripts for the worker
+importScripts('evaluator.js', 'combinatorics.js', 'evCalculator.js');
+
 class HouseEdgeWorker {
   constructor() {
     this.evaluator = new HandEvaluator();

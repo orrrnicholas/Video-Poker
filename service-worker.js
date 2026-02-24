@@ -14,12 +14,10 @@ const ASSETS_TO_CACHE = [
     '/Video-Poker/engine/combinatorics.js',
     '/Video-Poker/engine/evCalculator.js',
     '/Video-Poker/engine/multiHandAnalysis.js',
-    '/Video-Poker/engine/houseEdgeWorker.js',
     '/Video-Poker/ui/gameSelector.js',
     '/Video-Poker/ui/cardInput.js',
     '/Video-Poker/ui/paytableEditor.js',
-    '/Video-Poker/ui/resultsView.js',
-    '/Video-Poker/ui/houseEdgeView.js'
+    '/Video-Poker/ui/resultsView.js'
 ];
 
 // Install event - cache assets

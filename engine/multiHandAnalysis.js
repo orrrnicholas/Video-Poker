@@ -6,14 +6,17 @@
 class MultiHandAnalysis {
   /**
    * Calculate multi-hand statistics
-   * @param {number} evPerHand - Expected value per hand
+   * @param {number} evPerHand - Expected value per hand (raw average payout in credits)
    * @param {number} numHands - Number of hands to analyze
    * @param {number} betPerHand - Bet amount per hand (default 5 for standard video poker)
    * @returns {object} Statistics for multiple hands
    */
   static calculateExpectations(evPerHand, numHands = 10, betPerHand = 5) {
-    const totalExpectedValue = evPerHand * numHands;
-    const expectedReturn = (totalExpectedValue / (betPerHand * numHands)) * 100;
+    // EV is raw average payout; profit = payout - bet (we need to account for the cost)
+    const totalPayout = evPerHand * numHands;
+    const totalCost = betPerHand * numHands;
+    const totalProfit = totalPayout - totalCost;
+    const expectedReturn = (totalPayout / totalCost) * 100;
     
     // Calculate statistical spread using standard deviation
     // For video poker, we estimate variance from the EV
@@ -21,15 +24,15 @@ class MultiHandAnalysis {
     const stdDev = Math.sqrt(variance * numHands);
     
     // Confidence intervals (approximate)
-    const ci95Lower = totalExpectedValue - (1.96 * stdDev);
-    const ci95Upper = totalExpectedValue + (1.96 * stdDev);
+    const ci95Lower = totalProfit - (1.96 * stdDev);
+    const ci95Upper = totalProfit + (1.96 * stdDev);
     
     return {
       numHands: numHands,
       betPerHand: betPerHand,
       totalBet: betPerHand * numHands,
       evPerHand: evPerHand,
-      totalExpectedValue: totalExpectedValue,
+      totalExpectedValue: totalProfit,
       expectedReturn: expectedReturn,
       expectedReturnPercent: expectedReturn,
       
