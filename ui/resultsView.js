@@ -98,7 +98,7 @@ class ResultsView {
 
     const bestEVText = document.createElement('div');
     bestEVText.innerHTML = `<div><strong>Hold:</strong> ${bestCards}</div>` +
-                           `<div style="margin-top: 8px;"><strong>EV Per Hand:</strong> ${bestHold.ev.toFixed(3)}</div>`;
+                           `<div style="margin-top: 8px;"><strong>EV Per Hand:</strong> ${bestHold.ev.toPrecision(5)}</div>`;
 
     bestContent.appendChild(bestEVText);
     bestDiv.appendChild(bestTitle);
@@ -146,7 +146,7 @@ class ResultsView {
       
       const evBadge = document.createElement('div');
       evBadge.className = 'result-ev-badge';
-      evBadge.textContent = result.ev.toFixed(3);
+      evBadge.textContent = result.ev.toPrecision(5);
       
       const expandIcon = document.createElement('div');
       expandIcon.className = 'result-expand-icon';
@@ -169,7 +169,7 @@ class ResultsView {
       const detailsHTML = `
         <div class="result-detail-row">
           <span class="result-detail-label">EV Penalty:</span>
-          <span class="result-detail-value">${result.penalty.toFixed(3)}</span>
+          <span class="result-detail-value">${result.penalty.toPrecision(5)}</span>
         </div>
         <div class="result-detail-row">
           <span class="result-detail-label">Cards Drawn:</span>
@@ -300,13 +300,13 @@ class ResultsView {
 
       // EV
       const cellEV = document.createElement('td');
-      cellEV.textContent = result.ev.toFixed(3);
+      cellEV.textContent = result.ev.toPrecision(5);
       cellEV.className = 'ev-col';
       row.appendChild(cellEV);
 
       // Penalty
       const cellPenalty = document.createElement('td');
-      cellPenalty.textContent = result.penalty.toFixed(3);
+      cellPenalty.textContent = result.penalty.toPrecision(5);
       cellPenalty.className = 'penalty-col';
       row.appendChild(cellPenalty);
 
