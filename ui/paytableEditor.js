@@ -10,6 +10,7 @@ class PaytableEditor {
     this.presets = EVCalculator.getPresetPaytables();
     this.currentPaytable = JSON.parse(JSON.stringify(this.presets[0]));
     this.onPaytableChange = null;
+    this.isCollapsed = window.innerWidth <= 768;
     
     this.render();
   }
@@ -37,8 +38,8 @@ class PaytableEditor {
     const content = document.createElement('div');
     content.className = 'section-content';
     
-    // Start collapsed on mobile
-    if (window.innerWidth <= 768) {
+    // Preserve current collapsed state across re-renders
+    if (this.isCollapsed) {
       content.classList.add('collapsed');
       collapseIcon.classList.add('collapsed');
     }
@@ -47,6 +48,7 @@ class PaytableEditor {
     header.onclick = () => {
       content.classList.toggle('collapsed');
       collapseIcon.classList.toggle('collapsed');
+      this.isCollapsed = content.classList.contains('collapsed');
     };
 
     // Instructions

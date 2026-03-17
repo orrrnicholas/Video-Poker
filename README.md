@@ -2,6 +2,10 @@
 
 A professional-grade, mathematically exact Expected Value analyzer for video poker. Analyzes all possible card holds with perfect precision using combinatorial mathematics.
 
+## Live App
+
+- https://orrrnicholas.github.io/Video-Poker/
+
 ## Features
 
 - **Exact Analysis**: Uses precise mathematical enumeration (not approximation)

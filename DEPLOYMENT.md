@@ -1,4 +1,4 @@
-python -m http.server 8000# GitHub Pages Deployment Guide
+# GitHub Pages Deployment Guide
 
 ## Quick Start Deployment
 
@@ -14,7 +14,7 @@ git commit -m "Initial commit: Nick Orr's Video Poker Analyzer application"
 ### 2. Push to GitHub
 
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/Video-Poker.git
+git remote add origin https://github.com/orrrnicholas/Video-Poker.git
 git branch -M main
 git push -u origin main
 ```
@@ -33,7 +33,7 @@ git push -u origin main
 
 After 1-5 minutes:
 ```
-https://YOUR_USERNAME.github.io/Video-Poker/
+https://orrrnicholas.github.io/Video-Poker/
 ```
 
 ## Update manifest.json
@@ -42,8 +42,8 @@ Replace the placeholder paths in `manifest.json`:
 
 ```json
 {
-  "start_url": "https://YOUR_USERNAME.github.io/Video-Poker/index.html",
-  "scope": "https://YOUR_USERNAME.github.io/Video-Poker/"
+   "start_url": "https://orrrnicholas.github.io/Video-Poker/index.html",
+   "scope": "https://orrrnicholas.github.io/Video-Poker/"
 }
 ```
 
@@ -202,7 +202,7 @@ A       185.199.110.153
 A       185.199.111.153
 
 # For subdomain app.
-CNAME   yourusername.github.io
+CNAME   orrrnicholas.github.io
 ```
 
 Wait 24-48 hours for DNS propagation.

@@ -1,6 +1,6 @@
 # GitHub Pages Deployment Guide
 
-## ✅ Your app is configured for: `username.github.io/Video-Poker/`
+## ✅ Your app is configured for: `orrrnicholas.github.io/Video-Poker/`
 
 ## Steps to Deploy:
 
@@ -16,7 +16,7 @@ git commit -m "Initial commit - Video Poker Analyzer with dynamic RTP"
 1. Create a new repository on GitHub named **"Video-Poker"** (case-sensitive!)
 2. Run these commands:
 ```bash
-git remote add origin https://github.com/YOUR-USERNAME/Video-Poker.git
+git remote add origin https://github.com/orrrnicholas/Video-Poker.git
 git branch -M main
 git push -u origin main
 ```
@@ -29,7 +29,7 @@ git push -u origin main
 5. Click **Save**
 
 ### 4. Access Your Site
-- Your app will be live at: `https://YOUR-USERNAME.github.io/Video-Poker/`
+- Your app will be live at: `https://orrrnicholas.github.io/Video-Poker/`
 - It may take 1-2 minutes to deploy
 
 ## ✅ What Works:
@@ -69,7 +69,7 @@ python -m http.server 8080
 
 ## 🎉 Share with Friends:
 
-Once deployed, share this URL: `https://YOUR-USERNAME.github.io/Video-Poker/`
+Once deployed, share this URL: `https://orrrnicholas.github.io/Video-Poker/`
 
 They can:
 - Use it immediately in any modern browser
