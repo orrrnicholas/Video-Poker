@@ -30,10 +30,11 @@
 
             <!-- Loading Overlay -->
             <div id="loadingOverlay" class="loading-overlay">
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
-                    <p>Analyzing hand...</p>
-                    <p id="loadingProgress" class="loading-progress">Analyzing 32 holds...</p>
+                <div class="loading-progress-container">
+                    <p class="loading-label">Analyzing hand…</p>
+                    <div class="loading-bar-track">
+                        <div id="loadingProgressBar" class="loading-bar-fill"></div>
+                    </div>
                 </div>
             </div>
         </main>

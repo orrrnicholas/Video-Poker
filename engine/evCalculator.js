@@ -254,6 +254,39 @@ class EVCalculator {
     return results;
   }
 
+  async analyzeAllHoldsAsync(hand, onProgress = null) {
+    const results = [];
+    const YIELD_EVERY = 1;
+
+    for (let bitmask = 0; bitmask < 32; bitmask++) {
+      const held = this.combinatorics.bitmaskToHeld(bitmask, hand);
+      const result = this.calculateHoldEV(held, hand);
+
+      results.push({
+        bitmask: bitmask,
+        held: held,
+        ev: result.ev,
+        numDraws: result.numDraws,
+        totalPayout: result.totalPayout
+      });
+
+      if (onProgress) onProgress(bitmask + 1, 32);
+
+      if ((bitmask + 1) % YIELD_EVERY === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+    }
+
+    results.sort((a, b) => b.ev - a.ev);
+
+    const bestEV = results[0].ev;
+    results.forEach(result => {
+      result.penalty = bestEV - result.ev;
+    });
+
+    return results;
+  }
+
   /**
    * Estimate workload for analyzing all holds of a 5-card hand.
    * Returns exact counts for hold patterns and total outcome evaluations.

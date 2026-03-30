@@ -108,7 +108,7 @@ class CardEVAnalyzer {
     });
   }
 
-  analyzeHand() {
+  async analyzeHand() {
     const hand = this.cardInput.getSelectedCards();
     if (hand.length !== 5) {
       alert('Please select exactly 5 cards');
@@ -117,60 +117,47 @@ class CardEVAnalyzer {
 
     // Show loading overlay
     const loadingOverlay = document.getElementById('loadingOverlay');
-    const loadingProgress = document.getElementById('loadingProgress');
-    const workload = this.evCalculator.getAnalysisWorkload(hand);
+    const progressBar = document.getElementById('loadingProgressBar');
 
-    if (loadingProgress) {
-      loadingProgress.textContent = `Analyzing ${workload.totalOutcomeEvaluations.toLocaleString()} outcomes across ${workload.totalHolds} holds...`;
+    if (progressBar) progressBar.style.width = '0%';
+    if (loadingOverlay) loadingOverlay.classList.add('active');
+
+    // Yield one tick so the browser paints the overlay before analysis starts
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Get Ultimate X settings and update EV calculator
+    const settings = this.cardInput.getSettings();
+    this.evCalculator.setUltimateXSettings(settings.ultimateXEnabled, settings.credits);
+
+    let analyses;
+    try {
+      analyses = await this.evCalculator.analyzeAllHoldsAsync(hand, (done, total) => {
+        if (progressBar) progressBar.style.width = `${Math.round((done / total) * 100)}%`;
+      });
+    } catch (e) {
+      if (loadingOverlay) loadingOverlay.classList.remove('active');
+      console.error('Analysis failed:', e);
+      return;
     }
 
-    if (loadingOverlay) {
-      loadingOverlay.classList.add('active');
+    // Fill bar to 100% then render
+    if (progressBar) progressBar.style.width = '100%';
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    try {
+      this.resultsView.display(hand, analyses);
+      this.saveState();
+    } finally {
+      if (loadingOverlay) loadingOverlay.classList.remove('active');
+
+      setTimeout(() => {
+        const sessionCalc = document.getElementById('sessionCalculatorDisplay');
+        if (sessionCalc) {
+          sessionCalc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          sessionCalc.focus({ preventScroll: true });
+        }
+      }, 100);
     }
-
-    // Defer analysis to allow UI to update
-    setTimeout(() => {
-      try {
-        if (loadingProgress) {
-          loadingProgress.textContent = 'Applying game settings...';
-        }
-
-        // Get Ultimate X settings and update EV calculator
-        const settings = this.cardInput.getSettings();
-        this.evCalculator.setUltimateXSettings(settings.ultimateXEnabled, settings.credits);
-
-        if (loadingProgress) {
-          loadingProgress.textContent = `Analyzing ${workload.totalOutcomeEvaluations.toLocaleString()} outcomes across ${workload.totalHolds} holds...`;
-        }
-        
-        // Analyze all holds
-        const analyses = this.evCalculator.analyzeAllHolds(hand);
-
-        if (loadingProgress) {
-          loadingProgress.textContent = 'Rendering results...';
-        }
-
-        // Display results
-        this.resultsView.display(hand, analyses);
-
-        // Save state
-        this.saveState();
-      } finally {
-        // Hide loading overlay
-        if (loadingOverlay) {
-          loadingOverlay.classList.remove('active');
-        }
-        
-        // Focus on session expected return after analysis completes
-        setTimeout(() => {
-          const sessionCalc = document.getElementById('sessionCalculatorDisplay');
-          if (sessionCalc) {
-            sessionCalc.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            sessionCalc.focus({ preventScroll: true });
-          }
-        }, 100);
-      }
-    }, 100);
   }
 
   saveState() {
