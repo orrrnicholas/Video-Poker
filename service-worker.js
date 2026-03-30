@@ -3,22 +3,29 @@
  * Enables offline functionality and caches application assets
  */
 
-const CACHE_NAME = 'card-ev-analyzer-v2';
+const CACHE_NAME = 'card-ev-analyzer-v3';
 const ASSETS_TO_CACHE = [
-    '/Video-Poker/',
-    '/Video-Poker/index.html',
-    '/Video-Poker/style.css',
-    '/Video-Poker/main.js',
-    '/Video-Poker/manifest.json',
-    '/Video-Poker/engine/evaluator.js',
-    '/Video-Poker/engine/combinatorics.js',
-    '/Video-Poker/engine/evCalculator.js',
-    '/Video-Poker/engine/multiHandAnalysis.js',
-    '/Video-Poker/ui/gameSelector.js',
-    '/Video-Poker/ui/cardInput.js',
-    '/Video-Poker/ui/paytableEditor.js',
-    '/Video-Poker/ui/resultsView.js'
+    './',
+    './index.html',
+    './style.css',
+    './main.js',
+    './manifest.json',
+    './engine/evaluator.js',
+    './engine/combinatorics.js',
+    './engine/evCalculator.js',
+    './engine/multiHandAnalysis.js',
+    './ui/gameSelector.js',
+    './ui/cardInput.js',
+    './ui/paytableEditor.js',
+    './ui/resultsView.js'
 ];
+
+async function notifyOfflineReady() {
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clients) {
+        client.postMessage({ type: 'OFFLINE_READY' });
+    }
+}
 
 // Install event - cache assets
 self.addEventListener('install', (event) => {
@@ -35,6 +42,7 @@ self.addEventListener('install', (event) => {
             })
             .catch((error) => {
                 console.error('Cache installation failed:', error);
+                throw error;
             })
     );
 });
@@ -58,57 +66,52 @@ self.addEventListener('activate', (event) => {
                 console.log('Service Worker activated');
                 return self.clients.claim();
             })
+            .then(() => {
+                return notifyOfflineReady();
+            })
     );
 });
 
 // Fetch event - network-first strategy (like a website)
-// Always try to fetch from network first, fall back to cache if offline
 self.addEventListener('fetch', (event) => {
     // Only cache GET requests
-    if (event.request.method !== 'GET') {
+    if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
         return;
     }
 
     event.respondWith(
-        // Try network first
-        fetch(event.request)
-            .then((response) => {
-                // Don't cache non-successful responses
-                if (!response || response.status !== 200 || response.type === 'error') {
-                    return response;
+        caches.match(event.request, { ignoreSearch: true })
+            .then((cachedResponse) => {
+                if (cachedResponse) {
+                    return cachedResponse;
                 }
 
-                // Clone the response
-                const responseToCache = response.clone();
-
-                // Cache the successful response for offline use
-                caches.open(CACHE_NAME)
-                    .then((cache) => {
-                        cache.put(event.request, responseToCache);
-                    });
-
-                return response;
-            })
-            .catch(() => {
-                // Network failed, try cache
-                return caches.match(event.request)
+                return fetch(event.request)
                     .then((response) => {
-                        if (response) {
+                        if (!response || response.status !== 200 || response.type === 'error') {
                             return response;
                         }
 
-                        // No cache available either
-                        return new Response(
-                            'Network error - application is available offline',
-                            {
-                                status: 503,
-                                statusText: 'Service Unavailable',
-                                headers: new Headers({
-                                    'Content-Type': 'text/plain'
-                                })
-                            }
-                        );
+                        const responseToCache = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
+
+                        return response;
                     });
+            })
+            .catch(() => {
+                if (event.request.mode === 'navigate') {
+                    return caches.match('./index.html');
+                }
+
+                return new Response('Offline', {
+                    status: 503,
+                    statusText: 'Service Unavailable',
+                    headers: new Headers({
+                        'Content-Type': 'text/plain'
+                    })
+                });
             })
     );
 });

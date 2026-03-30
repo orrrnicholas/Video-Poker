@@ -17,6 +17,7 @@
             <div class="header-content">
                 <h1>♠ Nick Orr's Video Poker Analyzer</h1>
                 <p class="subtitle">Exact Expected Value Analysis</p>
+                <div id="offlineReadyBadge" class="offline-ready-badge" aria-live="polite">Offline Ready</div>
             </div>
         </header>
 
@@ -32,13 +33,14 @@
                 <div class="loading-spinner">
                     <div class="spinner"></div>
                     <p>Analyzing hand...</p>
+                    <p id="loadingProgress" class="loading-progress">Analyzing 32 holds...</p>
                 </div>
             </div>
         </main>
 
         <footer class="app-footer">
             <p>Nick Orr's Video Poker Analyzer v1.0 • Deterministic combinatorial analysis • Works fully offline</p>
-            <p style="font-size: 12px; color: #666;">For entertainment purposes only. Results for strategic analysis.</p>
+            <p style="font-size: 12px; color: #aeb7c2;">For entertainment purposes only. Results for strategic analysis.</p>
         </footer>
     </div>
 
@@ -59,17 +61,36 @@
 
     <!-- Service Worker Registration -->
     <script>
-        // Disable service worker for local development to avoid CORS issues
-        /*
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js').then(registration => {
-                console.log('Service Worker registered:', registration);
-            }).catch(error => {
-                console.log('Service Worker registration failed:', error);
-            });
+        function showOfflineReadyBadge() {
+            const badge = document.getElementById('offlineReadyBadge');
+            if (badge) {
+                badge.classList.add('visible');
+            }
         }
-        */
-        console.log('Service Worker disabled for local development');
+
+        // Register service worker on http/https for offline support.
+        if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'OFFLINE_READY') {
+                        showOfflineReadyBadge();
+                    }
+                });
+
+                navigator.serviceWorker.register('service-worker.js').then(registration => {
+                    console.log('Service Worker registered:', registration.scope);
+
+                    // On already-cached installs, ready is an immediate reliable signal.
+                    navigator.serviceWorker.ready.then(() => {
+                        showOfflineReadyBadge();
+                    });
+                }).catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+            });
+        } else {
+            console.log('Service Worker unavailable in this context');
+        }
     </script>
 </body>
 </html>

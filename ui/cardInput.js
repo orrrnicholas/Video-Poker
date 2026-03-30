@@ -14,6 +14,7 @@ class CardInput {
     this.multipliers = {};  // multiplier: count (empty by default)
     this.currentMultiplier = 1;  // multiplier value for this hand
     this.ultimateXEnabled = false;  // Toggle for Ultimate X
+    this.onStateChange = null;
     
     this.render();
   }
@@ -79,7 +80,10 @@ class CardInput {
     setTimeout(() => {
       const handsInput = document.getElementById('bettingHands');
       if (handsInput) {
-        handsInput.addEventListener('change', () => this.updateHandsCounterDisplay());
+        handsInput.addEventListener('change', () => {
+          this.updateHandsCounterDisplay();
+          this.triggerStateChange();
+        });
       }
     }, 0);
 
@@ -149,6 +153,8 @@ class CardInput {
           }
         }
       }
+
+      this.triggerStateChange();
     };
 
     const toggleLabel = document.createElement('label');
@@ -199,6 +205,17 @@ class CardInput {
     `;
     multiplierDiv.appendChild(currentMultiplierLabel);
 
+    setTimeout(() => {
+      const currentMultiplierSelect = document.getElementById('currentMultiplier');
+      if (currentMultiplierSelect) {
+        currentMultiplierSelect.value = String(this.currentMultiplier || 1);
+        currentMultiplierSelect.addEventListener('change', (e) => {
+          this.currentMultiplier = parseInt(e.target.value) || 1;
+          this.triggerStateChange();
+        });
+      }
+    }, 0);
+
     // Remaining hands multiplier grid
     const gridLabel = document.createElement('div');
     gridLabel.style.cssText = 'font-weight: 600; color: #aaa; margin-bottom: 8px; font-size: 13px;';
@@ -230,7 +247,10 @@ class CardInput {
       input.style.cssText = 'padding: 6px; border: 1px solid #5a9aba; border-radius: 4px; background: #1a2a3a; color: #fff; font-size: 12px; text-align: center;';
       
       // Add real-time counter update
-      input.oninput = () => this.updateHandsCounterDisplay();
+      input.oninput = () => {
+        this.updateHandsCounterDisplay();
+        this.triggerStateChange();
+      };
       
       multiplierInputs[`${mult}x`] = input;
       
@@ -312,11 +332,27 @@ class CardInput {
       document.body.appendChild(mobileActionBar);
     }
 
+    // Mobile selected cards bar (fixed above mobile action bar)
+    let mobileSelectedBar = document.getElementById('mobileSelectedCardsBar');
+    if (!mobileSelectedBar) {
+      mobileSelectedBar = document.createElement('div');
+      mobileSelectedBar.id = 'mobileSelectedCardsBar';
+      mobileSelectedBar.className = 'mobile-selected-cards-bar';
+
+      const mobileSelectedContent = document.createElement('div');
+      mobileSelectedContent.id = 'mobileSelectedCardsDisplay';
+      mobileSelectedContent.className = 'mobile-selected-cards-display';
+      mobileSelectedContent.textContent = 'No cards selected';
+
+      mobileSelectedBar.appendChild(mobileSelectedContent);
+      document.body.appendChild(mobileSelectedBar);
+    }
+
     // Selected cards display
     const selectedDiv = document.createElement('div');
     selectedDiv.className = 'selected-cards-display';
     selectedDiv.id = 'selectedCardsDisplay';
-    selectedDiv.innerHTML = '<p style="text-align: center; color: #888;">No cards selected</p>';
+    selectedDiv.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No cards selected</p>';
     content.appendChild(selectedDiv);
 
     // Card grid
@@ -337,7 +373,7 @@ class CardInput {
       const suitLabel = document.createElement('div');
       suitLabel.className = 'suit-label';
       suitLabel.innerHTML = suitLabels[suit];
-      suitLabel.style.color = (suit === 'H' || suit === 'D') ? '#ff4444' : '#fff';
+      suitLabel.style.color = (suit === 'H' || suit === 'D') ? '#cf203a' : '#111827';
       suitSection.appendChild(suitLabel);
 
       for (const rank of ranks) {
@@ -345,6 +381,9 @@ class CardInput {
         const btn = document.createElement('button');
         btn.textContent = rank;
         btn.className = 'card-btn';
+        if (this.selectedCards.includes(card)) {
+          btn.classList.add('selected');
+        }
         btn.dataset.card = card;
         btn.onclick = () => this.toggleCard(card, btn);
         suitSection.appendChild(btn);
@@ -355,6 +394,9 @@ class CardInput {
 
     content.appendChild(gridDiv);
     this.container.appendChild(content);
+
+    this.updateDisplay();
+    this.updateHandsCounterDisplay();
   }
 
   parseAndSetMultipliers() {
@@ -419,26 +461,34 @@ class CardInput {
     }
 
     this.updateDisplay();
+    this.triggerStateChange();
   }
 
   updateDisplay() {
     const display = document.getElementById('selectedCardsDisplay');
+    const mobileDisplay = document.getElementById('mobileSelectedCardsDisplay');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const mobileAnalyzeBtn = document.getElementById('mobileAnalyzeBtn');
 
     if (this.selectedCards.length === 0) {
-      display.innerHTML = '<p style="text-align: center; color: #888;">No cards selected</p>';
+      display.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No cards selected</p>';
+      if (mobileDisplay) {
+        mobileDisplay.innerHTML = '<span style="color: var(--text-secondary);">No cards selected</span>';
+      }
       analyzeBtn.disabled = true;
       if (mobileAnalyzeBtn) mobileAnalyzeBtn.disabled = true;
     } else {
       const cardDisplay = this.selectedCards.map(card => {
         const suit = card[1];
         const suitSymbol = { 'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠' }[suit];
-        const color = (suit === 'H' || suit === 'D') ? '#ff4444' : '#fff';
+        const color = (suit === 'H' || suit === 'D') ? '#ff4d5e' : '#f5f8fc';
         return `<span class="selected-card" style="color: ${color}; font-weight: bold;">${card[0]}${suitSymbol}</span>`;
       }).join(' ');
 
       display.innerHTML = `<div style="text-align: center; font-size: 18px; letter-spacing: 8px;">${cardDisplay}</div>`;
+      if (mobileDisplay) {
+        mobileDisplay.innerHTML = `<div style="text-align: center; font-size: 16px; letter-spacing: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${cardDisplay}</div>`;
+      }
 
       if (this.selectedCards.length === this.maxCards) {
         analyzeBtn.disabled = false;
@@ -452,7 +502,12 @@ class CardInput {
 
   clear() {
     this.selectedCards = [];
-    this.render();
+    document.querySelectorAll('.card-btn.selected').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+
+    this.updateDisplay();
+    this.triggerStateChange();
   }
 
   getSelectedCards() {
@@ -468,7 +523,7 @@ class CardInput {
       credits = 10;
     }
     
-    const currentMultiplier = parseInt(document.getElementById('currentMultiplier')?.value) || 1;
+    const currentMultiplier = parseInt(document.getElementById('currentMultiplier')?.value) || this.currentMultiplier || 1;
     
     // Get multiplier distribution
     const multipliers = {};
@@ -509,6 +564,8 @@ class CardInput {
     if (totalCount > 0) {
       this.showFeedback(`Updated: ${totalCount} hands across ${Object.keys(multipliers).length} multiplier levels`);
     }
+
+    this.triggerStateChange();
   }
 
   updateHandsCounterDisplay() {
@@ -537,6 +594,79 @@ class CardInput {
 
   setOnAnalyze(callback) {
     this.onAnalyze = callback;
+  }
+
+  setOnChange(callback) {
+    this.onStateChange = callback;
+  }
+
+  triggerStateChange() {
+    if (this.onStateChange) {
+      this.onStateChange({
+        selectedCards: this.getSelectedCards(),
+        settings: this.getSettings()
+      });
+    }
+  }
+
+  setState(state = {}) {
+    const selectedCards = Array.isArray(state.selectedCards) ? state.selectedCards : [];
+    this.selectedCards = selectedCards
+      .filter(card => typeof card === 'string' && /^[AKQJT98765432][HDCS]$/.test(card))
+      .slice(0, this.maxCards);
+
+    const settings = state.settings || {};
+
+    this.ultimateXEnabled = !!settings.ultimateXEnabled;
+    this.currentMultiplier = Math.min(12, Math.max(1, parseInt(settings.currentMultiplier) || 1));
+
+    if (this.ultimateXEnabled) {
+      this.multipliers = {};
+      const savedMultipliers = settings.multipliers || {};
+      for (let mult = 1; mult <= 12; mult++) {
+        const key = `${mult}x`;
+        const count = parseInt(savedMultipliers[key]) || 0;
+        if (count > 0) {
+          this.multipliers[key] = count;
+        }
+      }
+    } else {
+      this.multipliers = {};
+    }
+
+    this.render();
+
+    const handsInput = document.getElementById('bettingHands');
+    if (handsInput && Number.isFinite(Number(settings.hands)) && Number(settings.hands) > 0) {
+      handsInput.value = String(Math.floor(Number(settings.hands)));
+    }
+
+    const creditsInput = document.getElementById('bettingCredits');
+    if (creditsInput) {
+      if (this.ultimateXEnabled) {
+        creditsInput.value = '10';
+      } else if (Number.isFinite(Number(settings.credits)) && Number(settings.credits) > 0) {
+        creditsInput.value = String(Number(settings.credits));
+      }
+    }
+
+    const ultimateXToggle = document.getElementById('ultimateXToggle');
+    if (ultimateXToggle) {
+      ultimateXToggle.checked = this.ultimateXEnabled;
+    }
+
+    const ultimateXSection = document.getElementById('ultimateXSection');
+    if (ultimateXSection) {
+      ultimateXSection.style.display = this.ultimateXEnabled ? 'block' : 'none';
+    }
+
+    const currentMultiplierSelect = document.getElementById('currentMultiplier');
+    if (currentMultiplierSelect) {
+      currentMultiplierSelect.value = String(this.currentMultiplier);
+    }
+
+    this.updateDisplay();
+    this.updateHandsCounterDisplay();
   }
 
   showFeedback(message) {

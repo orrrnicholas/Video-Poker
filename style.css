@@ -8,12 +8,12 @@
     --bg-secondary: #252525;
     --bg-tertiary: #303030;
     --text-primary: #ffffff;
-    --text-secondary: #aaaaaa;
-    --text-tertiary: #888888;
+    --text-secondary: #c9d1da;
+    --text-tertiary: #aeb7c2;
     --accent-primary: #4a9eff;
     --accent-secondary: #00cc66;
     --accent-danger: #ff4444;
-    --border-color: #404040;
+    --border-color: #566273;
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     --transition: all 0.3s ease;
 }
@@ -68,6 +68,29 @@ html, body {
     font-size: 14px;
     color: var(--text-secondary);
     font-weight: 300;
+}
+
+.offline-ready-badge {
+    margin: 10px auto 0;
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 204, 102, 0.45);
+    background: rgba(0, 204, 102, 0.12);
+    color: #9cffc2;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+}
+
+.offline-ready-badge.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .header-tabs {
@@ -344,7 +367,7 @@ select:focus {
     gap: 12px;
     margin-bottom: 20px;
     padding: 15px;
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.08);
     border-radius: 8px;
 }
 
@@ -352,33 +375,33 @@ select:focus {
     display: grid;
     grid-template-columns: repeat(13, 1fr);
     gap: 8px;
-    background-color: var(--bg-secondary);
+    background-color: #eff3f8;
     padding: 12px;
     border-radius: 6px;
-    border: 1px solid var(--border-color);
+    border: 1px solid #c2ccd8;
 }
 
 .card-suit-section.suit-hearts .card-btn,
 .card-suit-section.suit-diamonds .card-btn {
-    color: #ff4444;
+    color: #c92d3c;
 }
 
 .card-suit-section.suit-hearts .card-btn.selected,
 .card-suit-section.suit-diamonds .card-btn.selected {
-    background-color: #ff4444;
-    border-color: #ff4444;
+    background-color: #b72233;
+    border-color: #b72233;
     color: white;
 }
 
 .card-suit-section.suit-clubs .card-btn,
 .card-suit-section.suit-spades .card-btn {
-    color: #aaaaaa;
+    color: #111827;
 }
 
 .card-suit-section.suit-clubs .card-btn.selected,
 .card-suit-section.suit-spades .card-btn.selected {
-    background-color: var(--accent-secondary);
-    border-color: var(--accent-secondary);
+    background-color: #1d7a4d;
+    border-color: #1d7a4d;
     color: white;
 }
 
@@ -388,17 +411,17 @@ select:focus {
     font-size: 28px;
     font-weight: bold;
     padding: 10px;
-    background-color: var(--bg-tertiary);
+    background-color: #ffffff;
     border-radius: 6px;
-    border: 2px solid var(--border-color);
+    border: 2px solid #c2ccd8;
     margin-bottom: 8px;
 }
 
 .card-btn {
     padding: 8px 4px;
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
-    border: 2px solid var(--border-color);
+    background-color: #ffffff;
+    color: #111827;
+    border: 2px solid #b7c3d1;
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
@@ -412,16 +435,16 @@ select:focus {
 }
 
 .card-btn:hover {
-    border-color: var(--accent-secondary);
-    background-color: rgba(0, 204, 102, 0.15);
+    border-color: #3f88e1;
+    background-color: #f3f8ff;
     transform: translateY(-2px);
 }
 
 .card-btn.selected {
-    background-color: var(--accent-secondary);
-    border-color: var(--accent-secondary);
+    background-color: #1d7a4d;
+    border-color: #1d7a4d;
     color: white;
-    box-shadow: 0 0 12px rgba(0, 204, 102, 0.5);
+    box-shadow: 0 0 12px rgba(29, 122, 77, 0.45);
     font-weight: 700;
 }
 
@@ -1018,6 +1041,36 @@ select:focus {
     margin: 0;
 }
 
+.loading-progress {
+    color: #9ad6ff;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    opacity: 0.9;
+}
+
+/* ============================================
+   CONTRAST NORMALIZATION
+   Improves readability for legacy inline muted colors.
+   ============================================ */
+
+[style*="color: #666"],
+[style*="color:#666"] {
+    color: var(--text-tertiary) !important;
+}
+
+[style*="color: #888"],
+[style*="color:#888"] {
+    color: var(--text-secondary) !important;
+}
+
+[style*="color: #aaa"],
+[style*="color:#aaa"],
+[style*="color: #ccc"],
+[style*="color:#ccc"] {
+    color: var(--text-secondary) !important;
+}
+
 /* ============================================
    MOBILE ACTION BAR
    ============================================ */
@@ -1036,9 +1089,36 @@ select:focus {
     border-top: 2px solid var(--border-color);
 }
 
+.mobile-selected-cards-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 74px;
+    display: none;
+    z-index: 999;
+    padding: 8px 12px;
+    background: linear-gradient(180deg, rgba(37, 37, 37, 0.96) 0%, rgba(26, 26, 26, 0.98) 100%);
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.mobile-selected-cards-display {
+    width: 100%;
+    min-height: 24px;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--text-primary);
+}
+
 @media (max-width: 768px) {
     .mobile-action-bar {
         display: flex;
+    }
+
+    .mobile-selected-cards-bar {
+        display: block;
     }
     
     /* Hide original controls on mobile */
@@ -1048,7 +1128,7 @@ select:focus {
     
     /* Add padding to main content so action bar doesn't cover content */
     .main-content {
-        padding-bottom: 80px;
+        padding-bottom: 128px;
     }
 }
 

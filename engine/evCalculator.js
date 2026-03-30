@@ -255,6 +255,28 @@ class EVCalculator {
   }
 
   /**
+   * Estimate workload for analyzing all holds of a 5-card hand.
+   * Returns exact counts for hold patterns and total outcome evaluations.
+   */
+  getAnalysisWorkload(hand) {
+    if (!Array.isArray(hand) || hand.length !== 5) {
+      return { totalHolds: 0, totalOutcomeEvaluations: 0 };
+    }
+
+    let totalOutcomeEvaluations = 0;
+
+    for (let bitmask = 0; bitmask < 32; bitmask++) {
+      const held = this.combinatorics.bitmaskToHeld(bitmask, hand);
+      totalOutcomeEvaluations += this.combinatorics.countDraws(held.length);
+    }
+
+    return {
+      totalHolds: 32,
+      totalOutcomeEvaluations: totalOutcomeEvaluations
+    };
+  }
+
+  /**
    * Calculate house edge for entire paytable
    * Enumerates all 2,598,960 starting hands and calculates optimal EV
    * Runs synchronously - use Web Worker wrapper for UI

@@ -5,6 +5,8 @@
 
 class CardEVAnalyzer {
   constructor() {
+    this.storageKey = 'cardEVAnalyzerState';
+
     // Initialize core engines
     this.evaluator = new HandEvaluator();
     this.combinatorics = new Combinatorics();
@@ -83,6 +85,11 @@ class CardEVAnalyzer {
     // Card input analysis
     this.cardInput.setOnAnalyze(() => this.analyzeHand());
 
+    // Card input state changes
+    this.cardInput.setOnChange(() => {
+      this.saveState();
+    });
+
     // Paytable changes
     this.paytableEditor.setOnChange((paytable) => {
       this.evCalculator.setPaytable(paytable);
@@ -110,6 +117,13 @@ class CardEVAnalyzer {
 
     // Show loading overlay
     const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingProgress = document.getElementById('loadingProgress');
+    const workload = this.evCalculator.getAnalysisWorkload(hand);
+
+    if (loadingProgress) {
+      loadingProgress.textContent = `Analyzing ${workload.totalOutcomeEvaluations.toLocaleString()} outcomes across ${workload.totalHolds} holds...`;
+    }
+
     if (loadingOverlay) {
       loadingOverlay.classList.add('active');
     }
@@ -117,12 +131,24 @@ class CardEVAnalyzer {
     // Defer analysis to allow UI to update
     setTimeout(() => {
       try {
+        if (loadingProgress) {
+          loadingProgress.textContent = 'Applying game settings...';
+        }
+
         // Get Ultimate X settings and update EV calculator
         const settings = this.cardInput.getSettings();
         this.evCalculator.setUltimateXSettings(settings.ultimateXEnabled, settings.credits);
+
+        if (loadingProgress) {
+          loadingProgress.textContent = `Analyzing ${workload.totalOutcomeEvaluations.toLocaleString()} outcomes across ${workload.totalHolds} holds...`;
+        }
         
         // Analyze all holds
         const analyses = this.evCalculator.analyzeAllHolds(hand);
+
+        if (loadingProgress) {
+          loadingProgress.textContent = 'Rendering results...';
+        }
 
         // Display results
         this.resultsView.display(hand, analyses);
@@ -149,21 +175,56 @@ class CardEVAnalyzer {
 
   saveState() {
     const state = {
-      selectedCards: this.cardInput.selectedCards,
+      selectedGame: this.gameSelector.getSelectedGame(),
+      selectedCards: this.cardInput.getSelectedCards(),
+      cardSettings: this.cardInput.getSettings(),
       paytable: this.paytableEditor.getPaytable(),
       timestamp: new Date().toISOString()
     };
-    localStorage.setItem('cardEVAnalyzerState', JSON.stringify(state));
+
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(state));
+    } catch (e) {
+      console.log('Could not save state:', e);
+    }
   }
 
   loadSavedState() {
-    const saved = localStorage.getItem('cardEVAnalyzerState');
+    let saved = null;
+
+    try {
+      saved = localStorage.getItem(this.storageKey);
+    } catch (e) {
+      console.log('Could not access saved state:', e);
+      return;
+    }
+
     if (saved) {
       try {
         const state = JSON.parse(saved);
+
+        if (state.selectedGame) {
+          this.gameSelector.selectGame(state.selectedGame);
+        }
+
         if (state.paytable) {
           this.paytableEditor.setPaytable(state.paytable);
           this.evCalculator.setPaytable(state.paytable);
+
+          // Loaded paytable is user-customized relative to the selected preset.
+          const selectedGame = this.gameSelector.getSelectedGame();
+          if (selectedGame) {
+            this.gameSelector.updateGameRTP(selectedGame, null, true);
+          }
+        }
+
+        this.cardInput.setState({
+          selectedCards: state.selectedCards,
+          settings: state.cardSettings
+        });
+
+        if (this.cardInput.selectedCards.length === 5) {
+          this.analyzeHand();
         }
       } catch (e) {
         console.log('Could not load saved state:', e);

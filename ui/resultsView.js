@@ -73,7 +73,7 @@ class ResultsView {
     handDiv.className = 'results-hand-display';
     const suitMap = { 'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠' };
     const handDisplay = hand.map(card => {
-      const color = (card[1] === 'H' || card[1] === 'D') ? '#ff4444' : '#000';
+      const color = (card[1] === 'H' || card[1] === 'D') ? '#ff4d5e' : '#f4f8ff';
       return `<span style="color: ${color}; font-weight: bold; font-size: 18px;">${card[0]}${suitMap[card[1]]}</span>`;
     }).join(' ');
     handDiv.innerHTML = `<strong>Starting Hand:</strong> ${handDisplay}`;
@@ -92,7 +92,7 @@ class ResultsView {
     bestContent.className = 'best-hold-content';
 
     const bestCards = bestHold.held.map(card => {
-      const color = (card[1] === 'H' || card[1] === 'D') ? '#ff4444' : '#000';
+      const color = (card[1] === 'H' || card[1] === 'D') ? '#ff4d5e' : '#f4f8ff';
       return `<span style="color: ${color}; font-weight: bold; font-size: 20px;">${card[0]}${suitMap[card[1]]}</span>`;
     }).join(' ');
 
@@ -136,10 +136,10 @@ class ResultsView {
       const heldCards = document.createElement('div');
       heldCards.className = 'result-held-cards';
       if (result.held.length === 0) {
-        heldCards.innerHTML = '<em style="color: #888;">Draw All</em>';
+        heldCards.innerHTML = '<em style="color: var(--text-secondary);">Draw All</em>';
       } else {
         heldCards.innerHTML = result.held.map(card => {
-          const color = (card[1] === 'H' || card[1] === 'D') ? '#ff4444' : '#fff';
+          const color = (card[1] === 'H' || card[1] === 'D') ? '#ff4d5e' : '#f4f8ff';
           return `<span style="color: ${color};">${card[0]}${suitMap[card[1]]}</span>`;
         }).join(' ');
       }
@@ -289,9 +289,9 @@ class ResultsView {
       // Held cards
       const cellHeld = document.createElement('td');
       const heldText = result.held.length === 0 ?
-        '<em style="color: #888;">Draw all</em>' :
+        '<em style="color: var(--text-secondary);">Draw all</em>' :
         result.held.map(card => {
-          const color = (card[1] === 'H' || card[1] === 'D') ? '#ff4444' : '#000';
+          const color = (card[1] === 'H' || card[1] === 'D') ? '#ff4d5e' : '#f4f8ff';
           return `<span style="color: ${color}; font-weight: bold;">${card[0]}${suitMap[card[1]]}</span>`;
         }).join(' ');
       cellHeld.innerHTML = heldText;
